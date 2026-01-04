@@ -49,12 +49,19 @@ else
     echo "No packages to remove."
 fi
 
-# Install tailscale package from their repo
-echo "Installing tailscale from official repo..."
+echo "::group:: Install Tailscale"
+
+# Install tailscale package from their official repository
+echo "Installing Tailscale from official repository..."
 dnf5 config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
 dnf5 config-manager setopt tailscale-stable.enabled=0
 dnf5 -y install --enablerepo='tailscale-stable' tailscale
 
+echo "::endgroup::"
+
+echo "::group:: Install COPR Packages"
+
+# Example of COPR package installation (currently disabled)
 # copr_install_isolated scottames/ghostty "ghostty"
 
 copr_install_isolated "lizardbyte/beta" \
@@ -63,10 +70,18 @@ copr_install_isolated "lizardbyte/beta" \
 copr_install_isolated "ublue-os/packages" \
     "krunner-bazaar"
 
-# TODO: remove me on next flatpak release when preinstall landed in Fedora
+echo "::endgroup::"
+
+echo "::group:: Install Flatpak Preinstall Support"
+
+# TODO: Remove this section when flatpak preinstall is available in Fedora stable
 dnf5 -y copr enable ublue-os/flatpak-test
 dnf5 -y copr disable ublue-os/flatpak-test
 dnf5 -y --repo=copr:copr.fedorainfracloud.org:ublue-os:flatpak-test swap flatpak flatpak
 dnf5 -y --repo=copr:copr.fedorainfracloud.org:ublue-os:flatpak-test swap flatpak-libs flatpak-libs
 dnf5 -y --repo=copr:copr.fedorainfracloud.org:ublue-os:flatpak-test swap flatpak-session-helper flatpak-session-helper
 dnf5 -y --repo=copr:copr.fedorainfracloud.org:ublue-os:flatpak-test install flatpak-debuginfo flatpak-libs-debuginfo flatpak-session-helper-debuginfo
+
+echo "::endgroup::"
+
+echo "Package installation complete!"

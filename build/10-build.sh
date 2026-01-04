@@ -50,7 +50,7 @@ echo "::group:: System Configuration"
 
 echo "::endgroup::"
 
-echo "Custom build complete!"
+echo "Base system configuration complete!"
 
 ###############################################################################
 # Execute remaining build scripts in sequence
@@ -67,4 +67,4 @@ for script in 20-packages.sh 30-workarounds.sh 40-systemd.sh 90-cleanup.sh; do
     echo "::endgroup::"
 done
 
-echo "All build scripts completed successfully!"
+echo "Build process completed successfully!"

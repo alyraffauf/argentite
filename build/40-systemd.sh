@@ -23,4 +23,4 @@ systemctl --global disable sunshine.service
 
 echo "::endgroup::"
 
-echo "Systemd configuration complete!"
+echo "Systemd service configuration complete!"

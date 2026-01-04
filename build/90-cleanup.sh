@@ -61,4 +61,4 @@ ostree container commit
 
 echo "::endgroup::"
 
-echo "Cleanup complete!"
+echo "Final cleanup and configuration complete!"
