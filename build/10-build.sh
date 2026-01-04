@@ -15,10 +15,16 @@ echo "Orchestrating build scripts..."
 echo "::endgroup::"
 
 # Execute build scripts in sequence
-/ctx/build/15-custom-files.sh
-/ctx/build/20-packages.sh
-/ctx/build/30-workarounds.sh
-/ctx/build/40-systemd.sh
-/ctx/build/90-cleanup.sh
+# Each script is checked for existence before execution
+for script in 15-custom-files.sh 20-packages.sh 30-workarounds.sh 40-systemd.sh 90-cleanup.sh; do
+    script_path="/ctx/build/${script}"
+    if [[ ! -x "${script_path}" ]]; then
+        echo "ERROR: Build script ${script} not found or not executable" >&2
+        exit 1
+    fi
+    echo "::group:: Executing ${script}"
+    "${script_path}"
+    echo "::endgroup::"
+done
 
 echo "All build scripts completed successfully!"
