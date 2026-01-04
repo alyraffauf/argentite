@@ -15,6 +15,10 @@ source /ctx/build/copr-helpers.sh
 
 echo "::group:: Copy Custom Files"
 
+# Copy system files
+
+rsync -rvKl /ctx/files/ /
+
 # Copy Brewfiles to standard location
 mkdir -p /usr/share/ublue-os/homebrew/
 cp /ctx/custom/brew/*.Brewfile /usr/share/ublue-os/homebrew/
