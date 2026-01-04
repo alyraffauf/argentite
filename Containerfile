@@ -3,7 +3,7 @@
 ###############################################################################
 # Name: kyanite
 #
-# IMPORTANT: Change "finpilot" above to your desired project name.
+# IMPORTANT: Change "kyanite" above to your desired project name.
 # This name should be used consistently throughout the repository in:
 #   - Justfile: export image_name := env("IMAGE_NAME", "your-name-here")
 #   - README.md: # your-name-here (title)
@@ -18,12 +18,10 @@
 ###############################################################################
 # MULTI-STAGE BUILD ARCHITECTURE
 ###############################################################################
-# This Containerfile follows the Bluefin architecture pattern as implemented in
-# @projectbluefin/distroless. The architecture layers OCI containers together:
+# This Containerfile uses a multi-stage build pattern for modularity:
 #
 # 1. Context Stage (ctx) - Combines resources from:
 #    - Local build scripts and custom files
-#    - @projectbluefin/common - Desktop configuration shared with Aurora 
 #    - @ublue-os/brew - Homebrew integration
 #
 # 2. Base Image Options:
@@ -32,7 +30,7 @@
 #    - `ghcr.io/ublue-os/base-main:latest` (Fedora and no desktop 
 #    - `quay.io/centos-bootc/centos-bootc:stream10 (CentOS-based)` 
 #
-# See: https://docs.projectbluefin.io/contributing/ for architecture diagram
+# See: https://docs.projectbluefin.io/contributing/ for more on this pattern
 ###############################################################################
 
 # Context stage - combine local and imported OCI container resources
