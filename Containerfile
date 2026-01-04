@@ -27,8 +27,8 @@
 # 2. Base Image Options:
 #    - `ghcr.io/ublue-os/kinoite-main:latest` (Fedora and KDE Plasma)
 #    - `ghcr.io/ublue-os/silverblue-main:latest` (Fedora and GNOME)
-#    - `ghcr.io/ublue-os/base-main:latest` (Fedora and no desktop 
-#    - `quay.io/centos-bootc/centos-bootc:stream10 (CentOS-based)` 
+#    - `ghcr.io/ublue-os/base-main:latest` (Fedora and no desktop)
+#    - `quay.io/centos-bootc/centos-bootc:stream10` (CentOS-based) 
 #
 # See: https://docs.projectbluefin.io/contributing/ for more on this pattern
 ###############################################################################
