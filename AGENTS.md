@@ -36,12 +36,12 @@
 **Source of truth**: `Containerfile` line 9: `# Name: kyanite`
 
 **Files to update:**
-- `Containerfile` (line 9)
-- `Justfile` (line 1)
-- `README.md` (line 1)
-- `artifacthub-repo.yml` (line 5)
-- `custom/ujust/README.md` (~line 175)
-- `.github/workflows/ghcr-pruner.yml` (line 22)
+- `Containerfile` (line 4: `# Name: kyanite`)
+- `Justfile` (line 1: `export image_name`)
+- `README.md` (line 1: title)
+- `artifacthub-repo.yml` (line 5: `repositoryID`)
+- `custom/ujust/README.md` (bootc switch example)
+- `AGENTS.md` (line 1: title)
 
 ### 2. Create "What's Different" section in README
 
@@ -93,12 +93,16 @@ Signing is DISABLED by default. First builds succeed immediately. Enable later f
 ```
 ├── Containerfile          # Main build definition (multi-stage build with OCI imports)
 ├── Justfile              # Local build automation (image name, build commands)
-├── build/                # Build-time scripts (10-build.sh, 20-chrome.sh, etc.)
-│   ├── 10-build.sh      # Main build script (copy custom files, install packages)
-│   ├── 20-*.sh.example  # Example third-party repos (rename to use)
-│   ├── 30-*.sh.example  # Example desktop replacement (rename to use)
+├── build/                # Build-time scripts (executed in numerical order)
+│   ├── 10-build.sh      # Main orchestrator (copies files, runs other scripts)
+│   ├── 20-packages.sh   # Package management (install/remove from packages.json)
+│   ├── 30-workarounds.sh # System workarounds and compatibility fixes
+│   ├── 40-systemd.sh    # Systemd service configuration
+│   ├── 90-cleanup.sh    # Final cleanup and ostree commit
 │   ├── copr-helpers.sh  # Helper functions for COPR repositories
 │   └── README.md        # Build scripts documentation
+├── files/                # System files to copy to root (/)
+├── packages.json         # Package include/exclude lists (used by 20-packages.sh)
 ├── custom/               # User customizations (NOT in container, installed at runtime/first boot)
 │   ├── brew/            # Homebrew Brewfiles (CLI tools, dev tools)
 │   │   ├── default.Brewfile      # General CLI tools
@@ -136,27 +140,22 @@ Signing is DISABLED by default. First builds succeed immediately. Enable later f
 ## Core Principles
 
 ### Multi-Stage Build Architecture
-This template follows the **Bluefin architecture pattern** from @projectbluefin/distroless:
+This template uses a **multi-stage build pattern**:
 
 **Architecture Layers:**
 1. **Context Stage (ctx)** - Combines resources from multiple sources:
    - Local build scripts (`/build`)
-   - Local custom files (`/custom`)
-   - **@projectbluefin/common** - Desktop configuration shared with Aurora (`/oci/common`)
-   - **@projectbluefin/branding** - Branding assets (`/oci/branding`)
-   - **@ublue-os/artwork** - Artwork shared with Aurora and Bazzite (`/oci/artwork`)
+   - Local custom files (`/custom`, `/files`)
+   - Local package definitions (`packages.json`)
    - **@ublue-os/brew** - Homebrew integration (`/oci/brew`)
 
-2. **Base Image Options:**
-   - `ghcr.io/ublue-os/silverblue-main:42` (Fedora-based, default)
-   - `quay.io/centos-bootc/centos-bootc:stream10` (CentOS-based)
+2. **Base Image:**
+   - `ghcr.io/ublue-os/kinoite-main:43` (Fedora 43 with KDE Plasma)
 
 **OCI Container Resources:**
 - Resources from OCI containers are copied to **distinct subdirectories** (`/oci/*`) to avoid file conflicts
 - Renovate automatically updates `:latest` tags to **SHA digests** for reproducibility
 - All OCI resources are mounted at build-time via the `ctx` stage
-
-**Reference:** See [Bluefin Contributing Guide](https://docs.projectbluefin.io/contributing/) for architecture diagram
 
 ### Build-time vs Runtime
 - **Build-time** (`build/`): Baked into container. Use `dnf5 install`. Services, configs, system packages.
@@ -194,33 +193,43 @@ This section provides clear guidance on where to add different types of packages
 
 ### System Packages (dnf5 - Build-time)
 
-**Location**: `build/10-build.sh`
+**Location**: `packages.json` (processed by `build/20-packages.sh`)
 
 System packages are installed at build-time and baked into the container image. Use `dnf5` exclusively.
 
 **Example**:
-```bash
-# In build/10-build.sh
-dnf5 install -y vim git htop neovim tmux
+```json
+{
+    "include": [
+        "vim",
+        "git",
+        "htop",
+        "neovim",
+        "tmux"
+    ],
+    "exclude": [
+        "firefox",
+        "unwanted-package"
+    ]
+}
 ```
 
 **When to use**: 
 - System utilities and services
 - Dependencies required for other build-time operations
 - Packages that need to be available immediately on first boot
-- Services that need to be enabled with `systemctl enable`
+- Standard Fedora repository packages
 
 **Important**: 
-- Always use `dnf5` (never `dnf`, `yum`, or `rpm-ostree`)
-- Always add `-y` flag for non-interactive installs
-- For COPR repositories, use `copr_install_isolated` pattern and disable after use
-- For third-party repos, see example scripts: `build/20-onepassword.sh.example`
+- Edit `packages.json` in the repository root
+- The `include` array lists packages to install
+- The `exclude` array lists packages to remove
+- Packages are processed by `build/20-packages.sh`
 
-**Script Naming Convention**:
-- `10-build.sh` - Main build script (always runs first)
-- `20-*.sh` - Additional scripts (run in numerical order)
-- `30-*.sh` - Desktop environment changes
-- `.example` suffix - Rename to `.sh` to activate
+**For third-party software** (not in Fedora repos):
+- Add installation commands to `build/20-packages.sh`
+- See existing examples: Cider, Tailscale
+- Use `copr_install_isolated` for COPR packages
 
 ### Homebrew Packages (Brew - Runtime)
 
@@ -296,18 +305,17 @@ Branch=stable
 
 | Request | Action | Location |
 |---------|--------|----------|
-| Add package (build-time) | `dnf5 install -y pkg` | `build/10-build.sh` |
+| Add package (build-time) | Add to `include` array | `packages.json` |
+| Remove package | Add to `exclude` array | `packages.json` |
+| Add third-party software | Add installation commands | `build/20-packages.sh` |
 | Add package (runtime) | `brew "pkg"` | `custom/brew/default.Brewfile` |
 | Add GUI app | `[Flatpak Preinstall org.app.id]` | `custom/flatpaks/default.preinstall` |
 | Add user command | Create shortcut (NO dnf5) | `custom/ujust/*.just` |
-| Add third-party repo | Use example scripts | `build/20-*.sh.example` (rename) |
-| Replace desktop | Use example script | `build/30-cosmic-desktop.sh.example` |
-| Switch base image | Update FROM line | `Containerfile` line 38 |
-| Add OCI containers | Uncomment COPY --from= lines | `Containerfile` lines 13-18 (ctx stage) |
+| Add COPR package | Use `copr_install_isolated` | `build/20-packages.sh` |
+| Enable service | `systemctl enable service.name` | `build/40-systemd.sh` |
+| Switch base image | Update FROM line | `Containerfile` line 47 |
 | Test locally | `just build && just build-qcow2 && just run-vm-qcow2` | Terminal |
 | Deploy (production) | `sudo bootc switch ghcr.io/user/repo:stable` | Terminal |
-| Enable service | `systemctl enable service.name` | `build/10-build.sh` |
-| Add COPR | enable → install → **DISABLE** | `build/10-build.sh` |
 | Validate changes | Automatic on PR | `.github/workflows/validate-*.yml` |
 
 ---
@@ -318,140 +326,128 @@ Branch=stable
 
 **File**: `Containerfile`
 
-This template uses a **multi-stage build** following the @projectbluefin/distroless pattern.
+This template uses a **multi-stage build** pattern.
 
 **Stage 1: Context (ctx) - Line 39**
-Combines resources from multiple OCI containers:
+Combines resources from local and OCI sources:
 ```dockerfile
 FROM scratch AS ctx
 
 COPY build /build
+COPY files /files
 COPY custom /custom
+COPY packages.json /packages.json
 # Import from OCI containers - Renovate updates :latest to SHA-256 digests
-COPY --from=ghcr.io/ublue-os/base-main:latest /system_files /oci/base
-COPY --from=ghcr.io/projectbluefin/common:latest /system_files /oci/common
-COPY --from=ghcr.io/projectbluefin/branding:latest /system_files /oci/branding
-COPY --from=ghcr.io/ublue-os/artwork:latest /system_files /oci/artwork
 COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
 ```
 
-**Stage 2: Base Image - Line 52**
+**Stage 2: Base Image - Line 47**
 ```dockerfile
-FROM ghcr.io/ublue-os/silverblue-main:latest  # Default (Fedora-based)
-# OR
+FROM ghcr.io/ublue-os/kinoite-main:43  # Fedora 43 with KDE Plasma
+```
+
+**Alternative base images**:
+```dockerfile
+FROM ghcr.io/ublue-os/silverblue-main:latest  # GNOME desktop
+FROM ghcr.io/ublue-os/base-main:latest        # No desktop
 FROM quay.io/centos-bootc/centos-bootc:stream10  # CentOS-based
 ```
 
-**Common alternative base images**:
-```dockerfile
-FROM ghcr.io/ublue-os/bluefin:stable      # Dev, GNOME, `:stable` or `:gts`
-FROM ghcr.io/ublue-os/bazzite:stable      # Gaming, Steam Deck
-FROM ghcr.io/ublue-os/aurora:stable       # KDE Plasma
-FROM quay.io/fedora/fedora-bootc:42       # Upstream Fedora
-```
-
-**Tags**: `:stable` (recommended), `:latest` (bleeding edge), `-nvidia` variants available
-
-**Renovate**: Base image SHA and OCI container tags are auto-updated by Renovate bot every 6 hours (see `.github/renovate.json5`)
+**Renovate**: Base image SHA and OCI container tags are auto-updated by Renovate bot (see `.github/renovate.json5`)
 
 **OCI Container Resources:**
-- **@ublue-os/base-main** - Base system configuration
-- **@projectbluefin/common** - Desktop configuration shared with Aurora
-- **@projectbluefin/branding** - Branding assets
-- **@ublue-os/artwork** - Artwork shared with Aurora and Bazzite
 - **@ublue-os/brew** - Homebrew integration
 
 **File Locations in Build Scripts:**
 - Local build scripts: `/ctx/build/`
 - Local custom files: `/ctx/custom/`
-- Base files: `/ctx/oci/base/`
-- Common files: `/ctx/oci/common/`
-- Branding files: `/ctx/oci/branding/`
-- Artwork files: `/ctx/oci/artwork/`
+- Local system files: `/ctx/files/`
+- Package definitions: `/ctx/packages.json`
 - Brew files: `/ctx/oci/brew/`
 
 ### 2. OCI Containers for Additional System Files
 
-**File**: `Containerfile` (ctx stage, lines 6-18)
+**File**: `Containerfile` (ctx stage, line 45)
 
-Following the `@projectbluefin/distroless` pattern, you can layer in additional system files from OCI containers. These are commented out by default in the template.
+The template includes Homebrew integration from `@ublue-os/brew`:
 
-**Available OCI Containers**:
 ```dockerfile
-# Artwork and Branding from projectbluefin/common
-COPY --from=ghcr.io/projectbluefin/common:latest /system_files/bluefin /files/bluefin
-COPY --from=ghcr.io/projectbluefin/common:latest /system_files/shared /files/shared
-
-# Homebrew system files from ublue-os/brew
-COPY --from=ghcr.io/ublue-os/brew:latest /system_files /files/brew
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
 ```
 
 **What's included**:
-- `projectbluefin/common:latest` - Bluefin wallpapers, themes, branding assets, ujust completions, udev rules
 - `ublue-os/brew:latest` - Homebrew system integration files
 
-**When to use**:
-- You want Bluefin-specific artwork and wallpapers in your custom image
-- You want additional system integration beyond what the base image provides
-- You're building a Bluefin derivative and want to maintain brand consistency
+**To add more OCI containers**:
+Add additional `COPY --from=` lines in the ctx stage:
+
+```dockerfile
+FROM scratch AS ctx
+
+COPY build /build
+COPY files /files
+COPY custom /custom
+COPY packages.json /packages.json
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
+# Add your own OCI containers here:
+# COPY --from=ghcr.io/your-org/your-container:latest /system_files /oci/your-name
+```
 
 **Important**: 
-- These are **commented out by default** as template examples
-- Uncomment only if you specifically want these additional system files
-- The files are copied into the `ctx` stage and made available to your build scripts
-- To use the files in your build, you'll need to copy them from `/ctx/files/*` to appropriate system locations in your build scripts
+- Resources from OCI containers are available at `/ctx/oci/` during build
+- To use the files, copy them in your build scripts from `/ctx/oci/*` to system locations
 
 ### 3. Build Scripts (`build/`)
 
-**Pattern**: Numbered files (`10-build.sh`, `20-chrome.sh`, `30-cosmic.sh`) run in order.
+**Pattern**: `10-build.sh` executes all scripts in numerical order.
 
-**Example - `build/10-build.sh`**:
+**Build Script Organization:**
+1. **`10-build.sh`** - Copies custom files, runs other scripts
+2. **`20-packages.sh`** - Installs/removes packages from `packages.json`, third-party software
+3. **`30-workarounds.sh`** - System workarounds and compatibility fixes
+4. **`40-systemd.sh`** - Enables/disables systemd services
+5. **`90-cleanup.sh`** - Final cleanup and ostree commit
+
+**Example - Adding packages** (edit `packages.json`):
+```json
+{
+    "include": [
+        "vim",
+        "git",
+        "htop",
+        "neovim"
+    ],
+    "exclude": [
+        "firefox"
+    ]
+}
+```
+
+**Example - Third-party software** (in `build/20-packages.sh`):
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/bash
+set -eoux pipefail
 
-# Install packages
-dnf5 install -y vim git htop neovim
+# Tailscale from official repository
+dnf5 config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+dnf5 config-manager setopt tailscale-stable.enabled=0
+dnf5 -y install --enablerepo='tailscale-stable' tailscale
+```
 
-# Enable services
+**Example - COPR packages** (in `build/20-packages.sh`):
+```bash
+source /ctx/build/copr-helpers.sh
+
+copr_install_isolated "ublue-os/packages" "krunner-bazaar"
+```
+
+**Example - Enable services** (in `build/40-systemd.sh`):
+```bash
 systemctl enable podman.socket
-
-# Download binaries
-curl -L https://example.com/tool -o /usr/local/bin/tool
-chmod +x /usr/local/bin/tool
+systemctl enable tailscaled.service
 ```
 
-**Example - COPR pattern** (see `build/20-onepassword.sh`):
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-source /ctx/copr-install-functions.sh
-
-# Chrome
-dnf config-manager addrepo --from-repofile=https://dl.google.com/linux/linux_signing_key.pub
-dnf5 install -y google-chrome-stable
-
-# 1Password via COPR (isolated)
-copr_install_isolated username/repo package-name
-```
-
-**Example - Desktop swap** (see `build/30-cosmic.sh`):
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# Remove GNOME, install COSMIC
-dnf5 group remove -y "GNOME Desktop Environment"
-dnf5 copr enable -y ryanabx/cosmic-epoch
-dnf5 install -y cosmic-desktop
-dnf5 copr disable -y ryanabx/cosmic-epoch
-systemctl set-default graphical.target
-```
-
-**CRITICAL**: Use `copr_install_isolated` function. Always disable COPRs.
-
-**Example scripts**: See `build/20-onepassword.sh.example` and `build/30-cosmic-desktop.sh.example` for complete working examples.
+**CRITICAL**: Use `copr_install_isolated` function. Always disable COPRs after use.
 
 ### 4. Homebrew (`custom/brew/`)
 
@@ -620,23 +616,15 @@ cp /ctx/oci/brew/*.sh /usr/local/bin/
 
 **Reference:** See [Bluefin Contributing Guide](https://docs.projectbluefin.io/contributing/) for architecture diagram
 
-### 9. Image Signing (Optional, Recommended for Production)
+### 9. Image Signing (Optional)
 
-**Default**: DISABLED (commented out in workflows) to allow first builds.
-```bash
-# Generate keys
-COSIGN_PASSWORD="" cosign generate-key-pair
-# Creates: cosign.key (SECRET), cosign.pub (COMMIT)
+**Note**: This repository does not currently implement image signing. The `cosign.pub` file exists as a placeholder.
 
-# Add to GitHub
-# Settings → Secrets and Variables → Actions → New secret
-# Name: SIGNING_SECRET
-# Value: <paste entire contents of cosign.key>
-
-# Uncomment signing sections in:
-# - .github/workflows/build.yml
-# - .github/workflows/build-testing.yml
-```
+To implement signing:
+1. Generate keys: `cosign generate-key-pair`
+2. Add `cosign.key` to GitHub Secrets as `SIGNING_SECRET`
+3. Add signing steps to `.github/workflows/build.yml`
+4. Commit updated `cosign.pub` to repository
 
 **NEVER commit `cosign.key`**. Already in `.gitignore`.
 
@@ -644,27 +632,25 @@ COSIGN_PASSWORD="" cosign generate-key-pair
 
 ## Critical Rules (Enforced)
 
-1. **ALWAYS** use Conventional Commits format for ALL commits (required for Release Please)
+1. **ALWAYS** use Conventional Commits format for ALL commits
    - Format: `<type>[scope]: <description>`
    - Valid types: `feat:`, `fix:`, `docs:`, `chore:`, `build:`, `ci:`, `refactor:`, `test:`
    - Breaking changes: Add `!` or `BREAKING CHANGE:` in footer
    - See `.github/commit-convention.md` for examples
-2. **NEVER** commit `cosign.key` to repository
-3. **ALWAYS** disable COPRs after use (`copr_install_isolated` function)
-4. **ALWAYS** use `dnf5` exclusively (never `dnf`, `yum`, `rpm-ostree`)
-5. **ALWAYS** use `-y` flag for non-interactive installs
-6. **NEVER** use `dnf5` in ujust files - only Brewfile/Flatpak shortcuts
-7. **ALWAYS** work on testing branch for development
-8. **ALWAYS** let Release Please handle testing→main merges
-9. **NEVER** push directly to main (only via Release Please)
-10. **ALWAYS** confirm with user before deviating from @ublue-os/bluefin patterns
+2. **System Packages**: Add to `packages.json` (not directly in scripts)
+3. **Third-party Software**: Add installation commands to `build/20-packages.sh`
+4. **COPR Packages**: Use `copr_install_isolated` function in `build/20-packages.sh`
+5. **Services**: Configure in `build/40-systemd.sh`
+6. **ALWAYS** use `dnf5` exclusively (never `dnf`, `yum`, or `rpm-ostree`)
+7. **ALWAYS** disable COPR repositories after installation
+8. **ALWAYS** use `-y` flag for non-interactive installs
+9. **NEVER** use `dnf5` in ujust files - only Brewfile/Flatpak shortcuts
+10. **NEVER** commit `cosign.key` to repository
 11. **ALWAYS** run shellcheck/YAML validation before committing
 12. **ALWAYS** update bootc switch URL in `iso/iso.toml` to match user's repo
-13. **ALWAYS** follow numbered script convention: `10-*.sh`, `20-*.sh`, `30-*.sh`
-14. **ALWAYS** check example scripts before creating new patterns (`.example` files in `build/`)
-15. **ALWAYS** validate that new Flatpak IDs exist on Flathub before adding
-16. **NEVER** modify validation workflows without understanding impact on PR checks
----
+13. **ALWAYS** validate that new Flatpak IDs exist on Flathub before adding
+14. **NEVER** modify validation workflows without understanding impact on PR checks
+15. **Build scripts run in order**: 10-build.sh → 20-packages.sh → 30-workarounds.sh → 40-systemd.sh → 90-cleanup.sh
 
 ## Troubleshooting
 
@@ -672,7 +658,7 @@ COSIGN_PASSWORD="" cosign generate-key-pair
 |---------|-------|----------|
 | Build fails: "permission denied" | Signing misconfigured | Verify signing commented out OR `SIGNING_SECRET` set |
 | Build fails: "package not found" | Typo or unavailable | Check spelling, verify on RPMfusion, add COPR if needed |
-| Build fails: "base image not found" | Invalid FROM line | Check syntax in `Containerfile` line 24 |
+| Build fails: "base image not found" | Invalid FROM line | Check syntax in `Containerfile` line 47 |
 | Build fails: "shellcheck error" | Script syntax error | Run `shellcheck build/*.sh` locally, fix errors |
 | PR validation fails: Brewfile | Invalid Brewfile syntax | Check Ruby syntax, ensure packages exist |
 | PR validation fails: Flatpak | Invalid app ID | Verify app ID exists on https://flathub.org/ |
@@ -694,80 +680,96 @@ COSIGN_PASSWORD="" cosign generate-key-pair
 
 **Use case**: Installing Google Chrome, 1Password, VS Code, etc.
 
-**Example**: See `build/20-onepassword.sh.example`
+**Example**: See `build/20-packages.sh` for Cider and Tailscale examples
 
 **Steps**:
 1. Add GPG key (if required)
-2. Create repo file in `/etc/yum.repos.d/`
-3. Install packages with `dnf5 install -y`
-4. **CRITICAL**: Remove repo file at end
+2. Add repository configuration
+3. Install packages with `dnf5 install -y --enablerepo='repo-name'`
+4. **CRITICAL**: Keep repo disabled by default
 
 ```bash
-# Add repo
-cat > /etc/yum.repos.d/google-chrome.repo << 'EOF'
-[google-chrome]
-name=google-chrome
-baseurl=https://dl.google.com/linux/chrome/rpm/stable/x86_64
-enabled=1
-gpgcheck=1
-gpgkey=https://dl.google.com/linux/linux_signing_key.pub
-EOF
-
-# Install
-dnf5 install -y google-chrome-stable
-
-# Clean up (required!)
-rm -f /etc/yum.repos.d/google-chrome.repo
+# Example: Tailscale (from build/20-packages.sh)
+echo "Installing Tailscale from official repository..."
+dnf5 config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+dnf5 config-manager setopt tailscale-stable.enabled=0
+dnf5 -y install --enablerepo='tailscale-stable' tailscale
 ```
 
 ### Pattern 2: Using COPR Repositories
 
 **Use case**: Installing packages from Fedora COPR (community repos)
 
-**Example**: See `build/copr-helpers.sh` and `build/30-cosmic-desktop.sh.example`
+**Example**: See `build/copr-helpers.sh` and `build/20-packages.sh`
 
 **Always use `copr_install_isolated` function**:
 ```bash
 source /ctx/build/copr-helpers.sh
 
 # Install from COPR (isolated - auto-disables after install)
-copr_install_isolated "ublue-os/staging" package-name
+copr_install_isolated "ublue-os/packages" "krunner-bazaar"
 
 # Install multiple packages
-copr_install_isolated "ryanabx/cosmic-epoch" \
-    cosmic-session \
-    cosmic-greeter \
-    cosmic-comp
+copr_install_isolated "lizardbyte/beta" \
+    "sunshine"
 ```
 
-### Pattern 3: Replacing Desktop Environment
+### Pattern 3: System Workarounds and Fixes
 
-**Use case**: Swap GNOME for KDE, COSMIC, etc.
+**Use case**: Apply compatibility fixes and system workarounds
 
-**Example**: See `build/30-cosmic-desktop.sh.example`
+**Example**: See `build/30-workarounds.sh`
 
 **Steps**:
-1. Remove old desktop: `dnf5 remove -y gnome-shell ...`
-2. Install new desktop: `copr_install_isolated ...`
-3. Configure display manager: `systemctl enable ...`
-4. Set default session
+1. Create necessary directories (e.g., `/nix` for Nix compatibility)
+2. Apply desktop-specific configurations
+3. Fix application integration issues
+4. Apply GTK/Qt workarounds as needed
 
 ### Pattern 4: Enabling System Services
 
-**Location**: `build/10-build.sh`
+**Location**: `build/40-systemd.sh`
+
+**Example**: See `build/40-systemd.sh`
 
 ```bash
-# Enable service
+# Enable system services
 systemctl enable podman.socket
+systemctl enable tailscaled.service
+systemctl enable flatpak-preinstall.service
 
-# Mask unwanted service
-systemctl mask unwanted-service
+# Enable global user services
+systemctl --global enable bazaar.service
 
-# Set default target
-systemctl set-default graphical.target
+# Disable global user services
+systemctl --global disable sunshine.service
 ```
 
-### Pattern 5: Creating Custom ujust Commands
+### Pattern 5: Managing Packages via packages.json
+
+**Location**: `packages.json` (repository root)
+
+**Example**:
+```json
+{
+    "include": [
+        "ansible",
+        "chezmoi",
+        "fish",
+        "vim",
+        "git"
+    ],
+    "exclude": [
+        "firefox",
+        "akonadi-server",
+        "discover"
+    ]
+}
+```
+
+**Processed by**: `build/20-packages.sh` automatically validates, installs included packages, and removes excluded packages.
+
+### Pattern 6: Creating Custom ujust Commands
 
 **Location**: `custom/ujust/*.just`
 
@@ -790,7 +792,7 @@ my-custom-command:
     # Your logic here (NO dnf5!)
 ```
 
-### Pattern 6: Local Testing Workflow
+### Pattern 7: Local Testing Workflow
 
 **Complete local testing cycle**:
 ```bash
@@ -814,7 +816,7 @@ just build-iso
 just run-vm-iso
 ```
 
-### Pattern 7: Pre-commit Validation (Optional)
+### Pattern 8: Pre-commit Validation (Optional)
 
 **Setup pre-commit hooks locally**:
 ```bash
@@ -849,11 +851,8 @@ RUN rm /opt && mkdir /opt
 - Cross-platform builds require additional setup
 
 ### Custom Build Functions
-See `build/copr-install-functions.sh` for reusable patterns:
+See `build/copr-helpers.sh` for reusable patterns:
 - `copr_install_isolated` - Enable COPR, install packages, disable COPR
-- Follow @ublue-os/bluefin conventions exactly
-
-
 
 ---
 
@@ -861,19 +860,27 @@ See `build/copr-install-functions.sh` for reusable patterns:
 
 ### Container Build Flow
 
-1. **Base Image** - Pulls base image specified in `Containerfile` FROM line
-2. **Context Stage** - Mounts `build/` and `custom/` directories
-3. **Build Scripts** - Runs scripts in `build/` directory in numerical order:
-   - `10-build.sh` - Always runs first (copies custom files, installs packages)
-   - `20-*.sh` - Additional scripts (if present and not .example)
-   - `30-*.sh` - More scripts (if present and not .example)
+1. **Base Image** - Pulls base image specified in `Containerfile` FROM line (`ghcr.io/ublue-os/kinoite-main:43`)
+2. **Context Stage** - Combines local files and OCI container resources:
+   - `build/` - Build scripts
+   - `files/` - System files to copy to root
+   - `custom/` - Runtime customizations (Brewfiles, ujust, Flatpaks)
+   - `packages.json` - Package include/exclude lists
+   - `@ublue-os/brew` - Homebrew integration from OCI
+3. **Build Scripts** - `10-build.sh` orchestrates execution in order:
+   - `10-build.sh` - Copies custom files, Brewfiles, ujust commands, Flatpak preinstalls
+   - `20-packages.sh` - Processes packages.json, installs third-party software
+   - `30-workarounds.sh` - Applies system workarounds and fixes
+   - `40-systemd.sh` - Configures systemd services
+   - `90-cleanup.sh` - Final cleanup and ostree commit
 4. **Container Lint** - Validates final image with `bootc container lint`
 5. **Push to Registry** - Uploads to GitHub Container Registry (ghcr.io)
 
 ### What Gets Included in the Image
 
 **Build-time (baked into image)**:
-- System packages from `dnf5 install`
+- System packages from `packages.json` (processed by `build/20-packages.sh`)
+- Third-party software installed in `build/20-packages.sh`
 - Enabled systemd services
 - Custom files copied from `/ctx/custom/` to standard locations:
   - Brewfiles → `/usr/share/ublue-os/homebrew/`
@@ -932,14 +939,15 @@ See `build/copr-install-functions.sh` for reusable patterns:
 
 When user requests customization, check in this order:
 
-1. **`build/10-build.sh`** (50%) - Build-time packages, services, system configs
-2. **`custom/brew/`** (20%) - Runtime CLI tools, dev environments
-3. **`custom/ujust/`** (15%) - User convenience commands
-4. **`custom/flatpaks/`** (5%) - GUI applications
-5. **`Containerfile`** (5%) - Base image, /opt config, advanced builds
-6. **`Justfile`** (2%) - Image name, build parameters
-7. **`iso/*.toml`** (2%) - ISO/disk customization for testing
-8. **`.github/workflows/`** (1%) - Metadata, triggers, workflow config
+1. **`packages.json`** (35%) - System packages to install/remove
+2. **`build/20-packages.sh`** (25%) - Third-party software, COPR packages
+3. **`build/40-systemd.sh`** (10%) - Systemd service configuration
+4. **`custom/brew/`** (15%) - Runtime CLI tools, dev environments
+5. **`custom/ujust/`** (5%) - User convenience commands
+6. **`custom/flatpaks/`** (5%) - GUI applications
+7. **`build/30-workarounds.sh`** (2%) - System workarounds and fixes
+8. **`Containerfile`** (2%) - Base image, /opt config, advanced builds
+9. **`Justfile`** (1%) - Image name, build parameters
 
 ### Files to AVOID Modifying
 
