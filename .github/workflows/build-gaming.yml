@@ -1,5 +1,5 @@
 ---
-name: Build kyanite
+name: Build kyanite-gaming
 on:
     pull_request:
         branches:
@@ -17,7 +17,7 @@ jobs:
     build:
         uses: ./.github/workflows/build-image.yml
         with:
-            image_name: "kyanite"
-            image_flavor: "main"
-            image_desc: "Kyanite - A clean KDE Plasma bootc image"
-            image_keywords: "bootc,ublue,universal-blue,kde"
+            image_name: "kyanite-gaming"
+            image_flavor: "gaming"
+            image_desc: "Kyanite Gaming - Gaming-focused variant with Steam"
+            image_keywords: "bootc,ublue,universal-blue,kde,gaming,steam"

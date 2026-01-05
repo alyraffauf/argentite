@@ -108,4 +108,17 @@ dnf5 -y --repo=copr:copr.fedorainfracloud.org:ublue-os:flatpak-test install flat
 
 echo "::endgroup::"
 
+if [[ "${IMAGE_FLAVOR}" == "gaming" ]]; then
+    echo "::group:: Install Steam and Gaming Tools"
+
+    dnf5 -y --setopt=install_weak_deps=False install \
+      steam \
+      gamescope \
+      mangohud.x86_64 \
+      mangohud.i686 \
+      gamemode
+
+    echo "::endgroup::"
+fi
+
 echo "Package installation complete!"

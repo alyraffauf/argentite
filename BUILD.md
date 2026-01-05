@@ -1,0 +1,229 @@
+# Build System Architecture
+
+This document explains how Kyanite's build system works, including the variant system for building both `kyanite` and `kyanite-gaming` from a single Containerfile.
+
+## Overview
+
+Kyanite uses a **single Containerfile** with **conditional build logic** to create two image variants:
+
+- **kyanite** (main flavor) - Base KDE Plasma image
+- **kyanite-gaming** (gaming flavor) - Base + Steam and gaming tools
+
+This follows the pattern used by Universal Blue projects like Bluefin and Aurora.
+
+## Architecture
+
+### 1. Containerfile (Single Source)
+
+```dockerfile
+ARG IMAGE_FLAVOR="${IMAGE_FLAVOR:-main}"
+
+# Build logic passes IMAGE_FLAVOR to build scripts
+RUN IMAGE_FLAVOR="${IMAGE_FLAVOR}" /ctx/build/10-build.sh
+```
+
+**Key Points**:
+- Uses `IMAGE_FLAVOR` build argument (default: "main")
+- Same Containerfile builds both variants
+- Follows Bluefin/Aurora pattern
+
+### 2. Build Scripts
+
+**`build/10-build.sh`**:
+- Executes build scripts in sequence
+- Passes `IMAGE_FLAVOR` to all subsequent scripts
+
+**`build/20-packages.sh`**:
+- Contains conditional logic for gaming variant
+- Simple `if` statement checks `IMAGE_FLAVOR`
+- Installs Steam when `IMAGE_FLAVOR=gaming`
+
+```bash
+if [[ "${IMAGE_FLAVOR}" == "gaming" ]]; then
+    # Install Steam and gaming tools
+    dnf5 -y install steam gamescope mangohud...
+fi
+```
+
+### 3. GitHub Actions Workflows
+
+**Reusable Workflow** (`.github/workflows/build-image.yml`):
+- Contains all build logic (DRY principle)
+- Accepts inputs: `image_name`, `image_flavor`, `image_desc`, `image_keywords`
+- Handles: checkout, build, tag, push to registry
+
+**Variant Workflows** (call the reusable workflow):
+
+**`.github/workflows/build.yml`**:
+```yaml
+jobs:
+  build:
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image_name: "kyanite"
+      image_flavor: "main"
+      image_desc: "Kyanite - A clean KDE Plasma bootc image"
+```
+
+**`.github/workflows/build-gaming.yml`**:
+```yaml
+jobs:
+  build:
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image_name: "kyanite-gaming"
+      image_flavor: "gaming"
+      image_desc: "Kyanite Gaming - Gaming-focused variant with Steam"
+```
+
+### Benefits of This Design
+
+✅ **No Code Duplication** - All build logic in one reusable workflow
+✅ **Easy to Add Variants** - Just create new workflow file calling reusable workflow
+✅ **Simple Maintenance** - Update build logic once, applies to all variants
+✅ **Clear Separation** - Variant-specific configs in caller workflows
+✅ **Follows Best Practices** - Matches Universal Blue patterns
+
+## Local Development
+
+### Build Standard Kyanite
+```bash
+just build
+# or explicitly:
+just build kyanite stable main
+```
+
+### Build Gaming Variant
+```bash
+IMAGE_FLAVOR=gaming just build
+# or explicitly:
+just build kyanite stable gaming
+```
+
+### Build VM Images
+```bash
+# Standard
+just build-qcow2
+
+# Gaming
+IMAGE_FLAVOR=gaming just build-qcow2
+```
+
+### Direct Podman Build
+```bash
+# Standard
+podman build -t localhost/kyanite:latest .
+
+# Gaming
+podman build \
+  --build-arg IMAGE_FLAVOR=gaming \
+  -t localhost/kyanite-gaming:latest \
+  .
+```
+
+## How Variants Work
+
+### Build Flow
+
+1. **Trigger**: Push to main or manual workflow dispatch
+2. **Matrix**: Both workflows run in parallel
+   - `build.yml` with `IMAGE_FLAVOR=main`
+   - `build-gaming.yml` with `IMAGE_FLAVOR=gaming`
+3. **Reusable Workflow**: Executes build steps
+4. **Conditional Logic**: `20-packages.sh` checks `IMAGE_FLAVOR`
+5. **Output**: Two images pushed to registry
+   - `ghcr.io/alyraffauf/kyanite:stable`
+   - `ghcr.io/alyraffauf/kyanite-gaming:stable`
+
+### IMAGE_FLAVOR Values
+
+| Value | Image Name | Description | Steam Installed |
+|-------|------------|-------------|-----------------|
+| `main` | kyanite | Base image | ❌ No |
+| `gaming` | kyanite-gaming | Gaming variant | ✅ Yes |
+
+## Adding New Variants
+
+To add a new variant (e.g., `kyanite-dev`):
+
+1. **Add conditional logic** in `build/20-packages.sh`:
+```bash
+if [[ "${IMAGE_FLAVOR}" == "dev" ]]; then
+    dnf5 -y install \
+        development-tools \
+        gcc \
+        make
+fi
+```
+
+2. **Create new workflow** `.github/workflows/build-dev.yml`:
+```yaml
+name: Build kyanite-dev
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-image.yml
+    with:
+      image_name: "kyanite-dev"
+      image_flavor: "dev"
+      image_desc: "Kyanite Dev - Development variant"
+      image_keywords: "bootc,ublue,kde,development"
+```
+
+3. **Done!** New variant builds automatically
+
+## File Structure
+
+```
+kyanite/
+├── .github/workflows/
+│   ├── build-image.yml      # Reusable workflow (all build logic)
+│   ├── build.yml            # Builds kyanite (main)
+│   └── build-gaming.yml     # Builds kyanite-gaming
+├── build/
+│   ├── 10-build.sh          # Main build orchestrator
+│   ├── 20-packages.sh       # Package installation + gaming variant logic
+│   ├── 30-workarounds.sh    # System workarounds
+│   ├── 40-systemd.sh        # Systemd service configuration
+│   └── 90-cleanup.sh        # Final cleanup
+├── Containerfile            # Single Containerfile for all variants
+└── Justfile                 # Local build commands
+```
+
+## Debugging
+
+### Check Build Arguments
+```bash
+# During build, check IMAGE_FLAVOR
+echo "IMAGE_FLAVOR: ${IMAGE_FLAVOR}"
+```
+
+### Verify Variant After Build
+```bash
+# Gaming variant creates metadata file
+cat /etc/kyanite/variant
+
+# Should show:
+# VARIANT=gaming
+# GAMING_STACK=true
+# STEAM_NATIVE=true
+```
+
+### Check Installed Packages
+```bash
+# Verify Steam installation
+rpm -q steam
+
+# Check gaming tools
+rpm -q gamescope mangohud gamemode
+```
+
+## References
+
+- [Universal Blue Documentation](https://universal-blue.org/)
+- [Bluefin Containerfile](https://github.com/ublue-os/bluefin/blob/main/Containerfile)
+- [Aurora Containerfile](https://github.com/ublue-os/aurora/blob/main/Containerfile)
+- [GitHub Reusable Workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)
