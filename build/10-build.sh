@@ -15,9 +15,13 @@ source /ctx/build/copr-helpers.sh
 
 echo "::group:: Copy Custom Files"
 
-# Copy system files
+# Copy shared system files
+rsync -rvKl /ctx/files/shared/ /
 
-rsync -rvKl /ctx/files/ /
+# Copy gaming-specific system files for gaming variant
+if [[ "${IMAGE_FLAVOR}" == "gaming" ]]; then
+	rsync -rvKl /ctx/files/gaming/ /
+fi
 
 # Copy Brewfiles to standard location
 mkdir -p /usr/share/ublue-os/homebrew/
