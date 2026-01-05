@@ -49,6 +49,30 @@ else
     echo "No packages to remove."
 fi
 
+echo "::group:: Install Cider"
+
+# Import Cider GPG key
+echo "Installing Cider from official repository..."
+rpm --import https://repo.cider.sh/RPM-GPG-KEY
+
+# Add Cider repository
+cat > /etc/yum.repos.d/cider.repo << 'EOF'
+[cidercollective]
+name=Cider Collective Repository
+baseurl=https://repo.cider.sh/rpm/RPMS
+enabled=0
+gpgcheck=1
+gpgkey=https://repo.cider.sh/RPM-GPG-KEY
+EOF
+
+# Install Cider package
+dnf5 -y install --enablerepo='cidercollective' Cider
+
+# Clean up repository file
+rm -f /etc/yum.repos.d/cider.repo
+
+echo "::endgroup::"
+
 echo "::group:: Install Tailscale"
 
 # Install tailscale package from their official repository

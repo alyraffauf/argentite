@@ -72,7 +72,6 @@ FROM ghcr.io/ublue-os/kinoite-main:43
 ##   - Local build scripts from /build
 ##   - Local custom files from /custom
 ##   - Files from @ublue-os/brew at /oci/brew
-## Scripts are run in numerical order (10-build.sh, 20-example.sh, etc.)
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
