@@ -1,63 +1,88 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices",
+    "config:best-practices"
   ],
 
   // Do not rebase when the default branch is updated
   "rebaseWhen": "never",
 
-  customManagers: [
+  // Explicitly enable managers
+  "enabledManagers": ["dockerfile", "github-actions", "custom.regex"],
+
+  // Dockerfile configuration for Containerfile support
+  "dockerfile": {
+    "enabled": true,
+    "managerFilePatterns": ["/(^|/)Containerfile$/", "/(^|/)Dockerfile$/"],
+    "pinDigests": true
+  },
+
+  // Custom regex managers for Justfile container images
+  "customManagers": [
     {
-      customType: 'regex',
-      description: 'Match container images in Justfile with tag and digest',
-      fileMatch: [
-        '^Justfile$',
+      "customType": "regex",
+      "description": "Match container images in Justfile with tag and digest",
+      "managerFilePatterns": ["/^Justfile$/"],
+      "matchStrings": [
+        "(?<justName>.+?)\\s:=\\s(?:env\\(.+?,\\s)?['\"](?<packageName>\\S+?):(?<currentValue>\\S+?)@(?<currentDigest>sha256:[a-f0-9]+?)['\"]\\)?"
       ],
-      matchStrings: [
-        '(?<justName>.+?)\\s:=\\s(?:env\\(.+?,\\s)?["\'](?<packageName>\\S+?):(?<currentValue>\\S+?)@(?<currentDigest>sha256:[a-f0-9]+?)["\']\\)?',
-      ],
-      datasourceTemplate: 'docker',
+      "datasourceTemplate": "docker"
     },
     {
-      customType: 'regex',
-      description: 'Match container images in Justfile run_args without tag or digest',
-      fileMatch: [
-        '^Justfile$',
+      "customType": "regex",
+      "description": "Match container images in Justfile run_args without tag or digest",
+      "managerFilePatterns": ["/^Justfile$/"],
+      "matchStrings": [
+        "run_args\\+=\\((?<packageName>[a-zA-Z0-9._:/-]+)\\)"
       ],
-      matchStrings: [
-        'run_args\\+=\\((?<packageName>[a-zA-Z0-9._:/-]+)\\)',
-      ],
-      datasourceTemplate: 'docker',
-      versioningTemplate: 'docker',
-    },
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker",
+      "currentValueTemplate": "latest"
+    }
   ],
 
+  // Package rules for specific behaviors
   "packageRules": [
     {
-      "automerge": true,
-      "matchUpdateTypes": ["pin", "pinDigest"]
+      "description": "Auto-merge all digest pins",
+      "matchUpdateTypes": ["pin", "pinDigest"],
+      "automerge": true
     },
     {
-      "description": "Auto-merge digest updates for base image and trigger build",
-      "automerge": true,
-      "matchManagers": ["dockerfile"],
+      "description": "Pin all Docker images with digests and auto-merge digest updates",
+      "matchDatasources": ["docker"],
+      "pinDigests": true,
       "matchUpdateTypes": ["digest"],
-      "matchFileNames": ["Containerfile"],
-      "labels": ["renovate", "automerge"],
+      "automerge": true,
+      "labels": ["renovate", "automerge"]
     },
     {
-      "description": "Disable automerge for all rechunk updates to allow manual review",
-      "matchUpdateTypes": ["major", "minor", "patch", "digest", "pinDigest"],
+      "description": "Auto-merge digest updates in Containerfile to trigger fresh builds",
+      "matchManagers": ["dockerfile"],
+      "matchFileNames": ["Containerfile"],
+      "matchUpdateTypes": ["digest"],
+      "automerge": true,
+      "labels": ["renovate", "automerge"]
+    },
+    {
+      "description": "Disable automerge for rechunk to allow manual review",
       "matchPackageNames": ["ghcr.io/hhd-dev/rechunk"],
+      "matchUpdateTypes": ["major", "minor", "patch", "digest", "pinDigest"],
       "automerge": false
     },
     {
-      "description": "Enable GitHub Actions updates since they are now pinned with SHA",
-      "enabled": true,
-      "matchUpdateTypes": ["digest", "pinDigest", "pin", "major", "minor", "patch"],
+      "description": "Enable and auto-merge GitHub Actions digest updates",
       "matchDepTypes": ["action"],
-      "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
+      "matchFileNames": [".github/workflows/**"],
+      "matchUpdateTypes": ["digest", "pinDigest", "pin"],
+      "pinDigests": true,
+      "automerge": true,
+      "enabled": true
     },
+    {
+      "description": "Manual review for major/minor version updates",
+      "matchUpdateTypes": ["major", "minor"],
+      "automerge": false
+    }
   ]
 }

@@ -8,6 +8,7 @@ ARG BASE_IMAGE="ghcr.io/ublue-os/${SOURCE_IMAGE}"
 ARG BREW_IMAGE="ghcr.io/ublue-os/brew:latest"
 # SHA pinning enables Renovate to automatically update dependencies
 # See: https://docs.renovatebot.com/docker/#digest-pinning
+ARG BASE_IMAGE_SHA="sha256:078e422050ed01e5025aa3320eaf2874bc838abdf6d1ed8bcc1c00f508b8d76c"
 ARG BREW_IMAGE_SHA="sha256:f9637549a24a7e02315c28db04cc0827dfc04bb74cea3be5c187f10c262c30d2"
 
 ###############################################################################
@@ -27,7 +28,7 @@ COPY --from=brew /system_files /oci/brew
 ###############################################################################
 # MAIN IMAGE
 ###############################################################################
-FROM ${BASE_IMAGE}:${FEDORA_MAJOR_VERSION} AS base
+FROM ${BASE_IMAGE}:${FEDORA_MAJOR_VERSION}@${BASE_IMAGE_SHA} AS base
 
 # Build arguments for image metadata and variant selection
 ARG IMAGE_NAME="${IMAGE_NAME:-kyanite}"

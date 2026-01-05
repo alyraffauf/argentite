@@ -25,7 +25,7 @@ cp /ctx/custom/brew/*.Brewfile /usr/share/ublue-os/homebrew/
 
 # Consolidate Just Files
 mkdir -p /usr/share/ublue-os/just/
-find /ctx/custom/ujust -iname '*.just' -exec printf "\n\n" \; -exec cat {} \; >> /usr/share/ublue-os/just/60-custom.just
+find /ctx/custom/ujust -iname '*.just' -exec printf "\n\n" \; -exec cat {} \; >>/usr/share/ublue-os/just/60-custom.just
 
 # Copy Flatpak preinstall files
 mkdir -p /etc/flatpak/preinstall.d/
@@ -38,14 +38,14 @@ echo "::endgroup::"
 ###############################################################################
 # Each script is checked for existence before execution
 for script in 20-packages.sh 30-workarounds.sh 40-systemd.sh 90-cleanup.sh; do
-    script_path="/ctx/build/${script}"
-    if [[ ! -x "${script_path}" ]]; then
-        echo "ERROR: Build script ${script} not found or not executable" >&2
-        exit 1
-    fi
-    echo "::group:: Executing ${script}"
-    "${script_path}"
-    echo "::endgroup::"
+	script_path="/ctx/build/${script}"
+	if [[ ! -x "${script_path}" ]]; then
+		echo "ERROR: Build script ${script} not found or not executable" >&2
+		exit 1
+	fi
+	echo "::group:: Executing ${script}"
+	"${script_path}"
+	echo "::endgroup::"
 done
 
 echo "Build process completed successfully!"
