@@ -185,6 +185,7 @@ just --justfile custom/ujust/custom-apps.just install-something
 
 **Start by editing the example files:**
 - **[`custom-apps.just`](custom-apps.just)** - Add your application installation commands
+- **[`custom-audio.just`](custom-audio.just)** - Audio DSP configuration for specific devices
 - **[`custom-system.just`](custom-system.just)** - Add your system configuration commands
 
 **Create new files** for different categories:
@@ -216,6 +217,7 @@ setup-dev:
 
 The included files provide starting examples:
 - **[`custom-apps.just`](custom-apps.just)** - Application installation commands
+- **[`custom-audio.just`](custom-audio.just)** - Audio DSP configuration commands
 - **[`custom-system.just`](custom-system.just)** - System configuration commands
 
 These files show how to:

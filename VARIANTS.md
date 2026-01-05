@@ -13,11 +13,10 @@ Clean KDE Plasma desktop for general use. No gaming tools pre-installed.
 **Image**: `ghcr.io/alyraffauf/kyanite-gaming:stable`
 
 Gaming-focused variant with Steam and gaming tools baked in:
-- Steam (native package from negativo17)
-- steam-devices (controller/peripheral support)
-- gamescope, gamemode
-- MangoHud, vkBasalt
-- Vulkan tools and drivers
+- Steam (native package)
+- gamescope (compositor for gaming)
+- gamemode (performance optimization)
+- MangoHud (performance overlay, x86_64 and i686)
 
 ## Switching Between Variants
 

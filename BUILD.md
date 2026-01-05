@@ -47,7 +47,7 @@ fi
 
 ### 3. GitHub Actions Workflows
 
-**Reusable Workflow** (`.github/workflows/build-image.yml`):
+**Reusable Workflow** (`.github/workflows/_build-image.yml`):
 - Contains all build logic (DRY principle)
 - Accepts inputs: `image_name`, `image_flavor`, `image_desc`, `image_keywords`
 - Handles: checkout, build, tag, push to registry
@@ -58,7 +58,7 @@ fi
 ```yaml
 jobs:
   build:
-    uses: ./.github/workflows/build-image.yml
+    uses: ./.github/workflows/_build-image.yml
     with:
       image_name: "kyanite"
       image_flavor: "main"
@@ -69,7 +69,7 @@ jobs:
 ```yaml
 jobs:
   build:
-    uses: ./.github/workflows/build-image.yml
+    uses: ./.github/workflows/_build-image.yml
     with:
       image_name: "kyanite-gaming"
       image_flavor: "gaming"
@@ -165,7 +165,7 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/build-image.yml
+    uses: ./.github/workflows/_build-image.yml
     with:
       image_name: "kyanite-dev"
       image_flavor: "dev"
@@ -180,7 +180,7 @@ jobs:
 ```
 kyanite/
 ├── .github/workflows/
-│   ├── build-image.yml      # Reusable workflow (all build logic)
+│   ├── _build-image.yml     # Reusable workflow (all build logic)
 │   ├── build.yml            # Builds kyanite (main)
 │   └── build-gaming.yml     # Builds kyanite-gaming
 ├── build/
@@ -199,17 +199,6 @@ kyanite/
 ```bash
 # During build, check IMAGE_FLAVOR
 echo "IMAGE_FLAVOR: ${IMAGE_FLAVOR}"
-```
-
-### Verify Variant After Build
-```bash
-# Gaming variant creates metadata file
-cat /etc/kyanite/variant
-
-# Should show:
-# VARIANT=gaming
-# GAMING_STACK=true
-# STEAM_NATIVE=true
 ```
 
 ### Check Installed Packages
