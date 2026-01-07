@@ -18,10 +18,18 @@ echo "::group:: Copy Custom Files"
 # Copy shared system files
 rsync -rvKl /ctx/files/shared/ /
 
+# Copy Homebrew
+rsync -rvKl /ctx/oci/brew/ /
+
 # Copy gaming-specific system files for gaming variant
 if [[ "${IMAGE_FLAVOR}" == "gaming" ]]; then
-	rsync -rvKl /ctx/files/gaming/ /
+    rsync -rvKl /ctx/files/gaming/ /
 fi
+
+# Set up homebrew
+systemctl preset brew-setup.service
+systemctl preset brew-update.timer
+systemctl preset brew-upgrade.timer
 
 # Copy Brewfiles to standard location
 mkdir -p /usr/share/ublue-os/homebrew/
@@ -42,14 +50,14 @@ echo "::endgroup::"
 ###############################################################################
 # Each script is checked for existence before execution
 for script in 20-packages.sh 30-workarounds.sh 40-systemd.sh 80-branding.sh 90-cleanup.sh; do
-	script_path="/ctx/build/${script}"
-	if [[ ! -x "${script_path}" ]]; then
-		echo "ERROR: Build script ${script} not found or not executable" >&2
-		exit 1
-	fi
-	echo "::group:: Executing ${script}"
-	"${script_path}"
-	echo "::endgroup::"
+    script_path="/ctx/build/${script}"
+    if [[ ! -x "${script_path}" ]]; then
+        echo "ERROR: Build script ${script} not found or not executable" >&2
+        exit 1
+    fi
+    echo "::group:: Executing ${script}"
+    "${script_path}"
+    echo "::endgroup::"
 done
 
 echo "Build process completed successfully!"
