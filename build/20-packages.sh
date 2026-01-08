@@ -91,9 +91,6 @@ echo "::group:: Install COPR Packages"
 # Example of COPR package installation (currently disabled)
 # copr_install_isolated scottames/ghostty "ghostty"
 
-copr_install_isolated "lizardbyte/beta" \
-    "sunshine"
-
 copr_install_isolated "ublue-os/packages" \
     "krunner-bazaar"
 
@@ -120,6 +117,9 @@ if [[ "${IMAGE_FLAVOR}" == "gaming" ]]; then
         mangohud.x86_64 \
         mangohud.i686 \
         gamemode
+
+    copr_install_isolated "lizardbyte/beta" \
+        "sunshine"
 
     echo "::endgroup::"
 fi
