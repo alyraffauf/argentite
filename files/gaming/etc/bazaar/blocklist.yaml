@@ -1,6 +1,8 @@
 blocklists:
   - block:
       - app.devsuite.Ptyxis
+      - com.valvesoftware.Steam
+      - dev.lizardbyte.app.Sunshine
       - io.github.kolunmi.Bazaar
       - org.kde.ark
       - org.kde.dolphin
