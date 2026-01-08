@@ -8,6 +8,9 @@ source /ctx/build/copr-helpers.sh
 
 dnf5 versionlock add plasma-desktop
 
+# Explicitly install KDE Plasma related packages with the same version as in base image
+dnf5 -y install plasma-firewall-$(rpm -q --qf "%{VERSION}" plasma-desktop)
+
 # Validate packages.json before attempting to parse it
 # This ensures builds fail fast if the JSON is malformed
 if ! jq empty /ctx/packages.json 2>/dev/null; then
