@@ -1,378 +1,196 @@
 # Agent Instructions for Kyanite
 
-Kyanite is a custom bootc operating system based on Fedora Kinoite (KDE Plasma). This document provides guidelines for AI agents working on this project.
+Kyanite is a bootc OS based on Fedora Kinoite (KDE Plasma). This guide covers critical rules and quick references for AI agents.
 
-## CRITICAL: Pre-Commit Checklist
+## PRE-COMMIT CHECKLIST ⚠️
 
 **Execute before EVERY commit:**
-1. **Conventional Commits** - ALL commits MUST follow conventional commit format
-2. **Shellcheck** - `shellcheck *.sh` on all modified shell files
-3. **YAML validation** - `python3 -c "import yaml; yaml.safe_load(open('file.yml'))"` on all modified YAML
-4. **Justfile syntax** - `just --list` to verify
-5. **Confirm with user** - Always confirm before committing and pushing
+1. **Conventional Commits** - Required format: `type(scope): description`
+2. **Shellcheck** - Run on all modified `.sh` files
+3. **YAML validation** - Validate all modified `.yml` files
+4. **Justfile syntax** - Run `just --list` to verify
+5. **User confirmation** - Always confirm before committing
+
+**Valid commit types**: `feat`, `fix`, `docs`, `chore`, `build`, `ci`, `refactor`, `test`
 
 **Never commit files with syntax errors.**
 
-### Conventional Commit Format
+## CRITICAL RULES
 
-ALL commits MUST use this format:
-```
-<type>[optional scope]: <description>
+1. **ALWAYS** use `dnf5` exclusively (never `dnf`, `yum`, or `rpm-ostree`)
+2. **ALWAYS** use `-y` flag for non-interactive installs
+3. **ALWAYS** disable COPR repos after installation via `copr_install_isolated`
+4. **NEVER** use `dnf5` in ujust files (immutable system)
+5. **NEVER** commit secrets or private keys
+6. System packages → `packages.json` (not build scripts)
+7. Third-party software → `build/20-packages.sh`
+8. Services → `build/40-systemd.sh`
 
-[optional body]
-```
+## QUICK REFERENCE
 
-**Valid types**: `feat`, `fix`, `docs`, `chore`, `build`, `ci`, `refactor`, `test`
-
-**Examples**:
-- `feat(packages): add development tools`
-- `fix(systemd): correct service dependencies`
-- `docs: update README with new features`
-- `chore: update dependencies`
-
-## Repository Structure
-
-```
-kyanite/
-├── Containerfile          # Main build definition
-├── Justfile              # Local build automation
-├── packages.json         # Package include/exclude lists
-├── build/                # Build-time scripts (executed in order)
-│   ├── 10-build.sh      # Main orchestrator
-│   ├── 20-packages.sh   # Package management
-│   ├── 30-workarounds.sh # System workarounds
-│   ├── 40-systemd.sh    # Service configuration
-│   ├── 90-cleanup.sh    # Final cleanup
-│   └── copr-helpers.sh  # COPR helper functions
-├── files/                # System files to copy to root (/)
-├── custom/               # User customizations (runtime)
-│   ├── brew/            # Homebrew Brewfiles
-│   ├── flatpaks/        # Flatpak preinstall files
-│   └── ujust/           # User-facing just commands
-├── iso/                  # Local testing (QCOW2, ISO builds)
-└── .github/workflows/   # CI/CD workflows
-```
-
-## Core Principles
-
-### Build-time vs Runtime
-- **Build-time** (`build/`, `packages.json`): Baked into container. System packages, services, configs.
-- **Runtime** (`custom/`): User installs after deployment. Brewfiles, Flatpaks, ujust commands.
-
-### Package Management
-- **ALWAYS** use `dnf5` exclusively (never `dnf`, `yum`, or `rpm-ostree`)
-- **ALWAYS** use `-y` flag for non-interactive installs
-- **ALWAYS** disable COPR repositories after installation using `copr_install_isolated`
-
-### Image Variants
-Kyanite has two variants built from the same Containerfile:
-- **kyanite** (`IMAGE_FLAVOR=main`) - Base KDE Plasma desktop
-- **kyanite-gaming** (`IMAGE_FLAVOR=gaming`) - Includes Steam and gaming tools
-
-The `IMAGE_FLAVOR` variable controls conditional package installation in `build/20-packages.sh`.
-
-## Where to Add Packages
-
-### System Packages (Build-time)
-
-**Location**: `packages.json`
-
-System packages are installed at build-time and baked into the container image.
-
-```json
-{
-    "include": [
-        "vim",
-        "git",
-        "htop"
-    ],
-    "exclude": [
-        "firefox",
-        "discover"
-    ]
-}
-```
-
-**When to use**: System utilities, services, dependencies needed on first boot.
-
-### Third-Party Software (Build-time)
-
-**Location**: `build/20-packages.sh`
-
-For software not in Fedora repos (e.g., Cider, Tailscale).
-
-```bash
-# Add repository, install package, disable repository
-dnf5 config-manager addrepo --from-repofile=https://example.com/repo.repo
-dnf5 config-manager setopt example-repo.enabled=0
-dnf5 -y install --enablerepo='example-repo' package-name
-```
-
-### COPR Packages (Build-time)
-
-**Location**: `build/20-packages.sh`
-
-Use the `copr_install_isolated` helper function:
-
-```bash
-source /ctx/build/copr-helpers.sh
-copr_install_isolated "copr-owner/repo-name" "package-name"
-```
-
-**CRITICAL**: Never leave COPR repos enabled. The helper function automatically disables them.
-
-### Homebrew Packages (Runtime)
-
-**Location**: `custom/brew/*.Brewfile`
-
-For CLI tools and development environments installed by users.
-
-```ruby
-# custom/brew/default.Brewfile
-brew "bat"
-brew "eza"
-brew "ripgrep"
-```
-
-Users install via: `ujust install-default-apps`
-
-### Flatpak Applications (Runtime)
-
-**Location**: `custom/flatpaks/*.preinstall`
-
-For GUI applications installed on first boot.
-
-```ini
-[Flatpak Preinstall org.mozilla.firefox]
-Branch=stable
-
-[Flatpak Preinstall com.visualstudio.code]
-Branch=stable
-```
-
-**Note**: Flatpaks are downloaded on first boot, not embedded in the ISO.
-
-## Quick Reference
-
-| Task | Location | Example |
-|------|----------|---------|
-| Add system package | `packages.json` | Add to `include` array |
-| Remove package | `packages.json` | Add to `exclude` array |
-| Add third-party software | `build/20-packages.sh` | See Cider/Tailscale examples |
-| Add COPR package | `build/20-packages.sh` | Use `copr_install_isolated` |
-| Enable/disable service | `build/40-systemd.sh` | `systemctl enable service` |
+| Task | Location | Command/Format |
+|------|----------|----------------|
+| Add system package | `packages.json` | Add to `"include"` array |
+| Remove package | `packages.json` | Add to `"exclude"` array |
+| Add 3rd-party RPM | `build/20-packages.sh` | See Docker/Cider/Tailscale examples |
+| Add COPR package | `build/20-packages.sh` | `copr_install_isolated "owner/repo" "pkg"` |
+| Enable service | `build/40-systemd.sh` | `systemctl enable service.name` |
 | Add Homebrew package | `custom/brew/*.Brewfile` | `brew "package-name"` |
-| Add Flatpak | `custom/flatpaks/*.preinstall` | INI format |
-| Add user command | `custom/ujust/*.just` | Just recipe syntax |
+| Add Flatpak | `custom/flatpaks/*.preinstall` | `[Flatpak Preinstall app.id]` |
+| Add ujust command | `custom/ujust/*.just` | Just recipe syntax |
 | Test locally | Terminal | `just build && just build-qcow2 && just run-vm-qcow2` |
 
-## Build Scripts
+## IMAGE VARIANTS
 
-Scripts run in numerical order during image build:
+Two variants built from single Containerfile using `IMAGE_FLAVOR`:
+- **main** (default) → `kyanite` - Base KDE Plasma
+- **gaming** → `kyanite-gaming` - Adds Steam, Gamescope, GameMode, MangoHud, Sunshine
 
-1. **`10-build.sh`** - Copies custom files, executes remaining scripts
-2. **`20-packages.sh`** - Installs/removes packages, third-party software, variant logic
-3. **`30-workarounds.sh`** - System workarounds and compatibility fixes
-4. **`40-systemd.sh`** - Enables/disables systemd services
-5. **`90-cleanup.sh`** - Final cleanup and ostree commit
-
-### Adding a New Build Script
-
-1. Create numbered file (e.g., `50-custom.sh`)
-2. Make executable: `chmod +x build/50-custom.sh`
-3. Add to execution list in `10-build.sh`
-
+Conditional logic in `build/20-packages.sh`:
 ```bash
-#!/usr/bin/env bash
-set -eoux pipefail
-
-echo "::group:: Your Section Name"
-# Your commands here
-echo "::endgroup::"
+if [[ "${IMAGE_FLAVOR}" == "gaming" ]]; then
+    # Gaming-specific packages
+fi
 ```
 
-## ujust Commands
+## BUILD SCRIPTS (Execution Order)
 
-User-facing commands in `custom/ujust/*.just`.
+1. `10-build.sh` - Copies files, orchestrates build
+2. `20-packages.sh` - Package management + variant logic
+3. `30-workarounds.sh` - System compatibility fixes
+4. `40-systemd.sh` - Service configuration
+5. `80-branding.sh` - OS release branding
+6. `90-cleanup.sh` - Final cleanup
 
-**Rules**:
-- **NEVER** use `dnf5` in ujust files (bootc images are immutable)
-- Create shortcuts to Brewfiles and Flatpaks
-- Use `[group('Category')]` for organization
+Details: See `build/README.md`
 
-**Example**:
-```just
-[group('Apps')]
-install-dev-tools:
-    brew bundle --file /usr/share/ublue-os/homebrew/development.Brewfile
+## WHERE TO ADD THINGS
 
-[group('System')]
-run-maintenance:
-    #!/usr/bin/env bash
-    echo "Running maintenance..."
-    podman system prune -af
-```
+### Build-time (Baked into image)
+- **System packages** → `packages.json`
+- **Third-party RPMs** → `build/20-packages.sh`
+- **System services** → `build/40-systemd.sh`
+- **System files** → `files/shared/` or `files/gaming/`
 
-## Workflows
+### Runtime (User installs after deployment)
+- **CLI tools** → `custom/brew/*.Brewfile`
+- **GUI apps** → `custom/flatpaks/*.preinstall`
+- **User commands** → `custom/ujust/*.just`
 
-### Development Workflow
-1. Create feature branch
-2. Make changes
-3. Open pull request
-4. Automated validation runs (shellcheck, YAML, Brewfile, Flatpak, etc.)
-5. Review and merge to `main`
-6. Merging triggers `:stable` image build and automatic signing
+## COMMON PATTERNS
 
-### Local Testing
-```bash
-just build              # Build container image
-just build-qcow2        # Build VM disk image
-just run-vm-qcow2       # Test in browser-based VM
-```
-
-### Image Tags
-- `:stable` - Latest stable release from main branch
-- `:stable.YYYYMMDD` - Datestamped stable release
-- `:pr-123` - Pull request builds (for testing, not signed)
-
-### Image Signing
-All tagged images built from `main` branch are automatically signed using:
-- **Tool**: Sigstore Cosign v3.0.3
-- **Method**: Keyless signing with GitHub OIDC tokens
-- **Transparency**: Signatures recorded in public Rekor log
-- **Verification**: See README.md Security section for verification and switching instructions
-
-**Important**: Pull request builds are NOT signed, only builds from the `main` branch.
-
-## Critical Rules
-
-1. **ALWAYS** use Conventional Commits format
-2. **ALWAYS** use `dnf5` exclusively (never `dnf`, `yum`, `rpm-ostree`)
-3. **ALWAYS** disable COPR repositories after installation
-4. **ALWAYS** use `-y` flag for non-interactive installs
-5. **NEVER** use `dnf5` in ujust files
-6. **NEVER** commit `cosign.key` or private keys to repository
-7. **ALWAYS** run validation checks before committing
-8. **System packages** go in `packages.json`, not directly in scripts
-9. **Third-party software** goes in `build/20-packages.sh`
-10. **Services** are configured in `build/40-systemd.sh`
-11. **Image signing** is automatic via GitHub Actions (no manual intervention needed)
-
-## Common Patterns
-
-### Pattern 1: Adding Third-Party RPM Repository
+### Add Third-Party RPM Repository
 ```bash
 # In build/20-packages.sh
-echo "::group:: Install Example Package"
 dnf5 config-manager addrepo --from-repofile=https://example.com/repo.repo
 dnf5 config-manager setopt example-repo.enabled=0
 dnf5 -y install --enablerepo='example-repo' package-name
-echo "::endgroup::"
 ```
 
-### Pattern 2: Using COPR Repositories
+### Add COPR Package
 ```bash
 # In build/20-packages.sh
 source /ctx/build/copr-helpers.sh
 copr_install_isolated "owner/repo" "package-name"
 ```
 
-### Pattern 3: Enabling System Services
+### Enable Services
 ```bash
 # In build/40-systemd.sh
 systemctl enable podman.socket
-systemctl enable tailscaled.service
 systemctl enable --global bazaar.service
 systemctl disable --global sunshine.service
 ```
 
-### Pattern 4: Managing Packages via packages.json
-```json
-{
-    "include": [
-        "ansible",
-        "chezmoi",
-        "fish",
-        "syncthing",
-        "ptyxis"
-    ],
-    "exclude": [
-        "firefox",
-        "discover",
-        "akonadi"
-    ]
-}
-```
-
-### Pattern 5: Creating ujust Command Shortcuts
+### Add Brewfile Shortcut
 ```just
 # In custom/ujust/custom-apps.just
-[group('Apps')]
-install-fonts:
-    brew bundle --file /usr/share/ublue-os/homebrew/fonts.Brewfile
-
 [group('Apps')]
 install-dev-tools:
     brew bundle --file /usr/share/ublue-os/homebrew/development.Brewfile
 ```
 
-## Debugging Tips
+## STRUCTURE
 
-### Local Build Debugging
+```
+kyanite/
+├── Containerfile          # Build definition
+├── Justfile              # Local automation
+├── packages.json         # Package lists
+├── build/                # Build scripts (see build/README.md)
+├── files/                # System files
+│   ├── shared/          # All variants
+│   └── gaming/          # Gaming variant only
+├── custom/               # Runtime customizations
+│   ├── brew/            # Brewfiles
+│   ├── flatpaks/        # Preinstall configs
+│   └── ujust/           # User commands
+└── .github/workflows/   # CI/CD
+```
+
+## LOCAL TESTING
+
 ```bash
-# Build with verbose output
-just build
+just build                    # Build container
+just build-qcow2             # Build VM image
+just run-vm-qcow2            # Test in browser VM
 
-# Check build logs
+# Gaming variant
+IMAGE_FLAVOR=gaming just build
+IMAGE_FLAVOR=gaming just build-qcow2
+```
+
+## WORKFLOWS
+
+**Development**: Branch → PR → Auto-validation → Merge → Build `:stable` + Sign
+
+**Image Tags**:
+- `:stable` - Latest from main
+- `:stable.YYYYMMDD` - Datestamped
+- `:pr-123` - PR builds (unsigned)
+
+**Signing**: Automatic via Cosign v3.0.3 (keyless OIDC) for main branch only
+
+## UJUST RULES
+
+- **NEVER** use `dnf5` (system is immutable)
+- Create shortcuts to Brewfiles/Flatpaks
+- Use `[group('Category')]` for organization
+- Source `/usr/lib/ujust/ujust.sh` for helpers (`Choose`, `Confirm`)
+
+## DEBUGGING
+
+```bash
+# Build logs
 podman logs <container-id>
 
-# Test in VM
-just build-qcow2
-just run-vm-qcow2
-```
-
-### CI Debugging
-- Check GitHub Actions logs
-- PR builds create `:pr-123` tagged images for testing
-- Validation workflows show specific errors (shellcheck, YAML, etc.)
-
-### Runtime Debugging
-```bash
-# Check service status
+# Service status
 systemctl status service-name
-
-# View logs
 journalctl -u service-name
 
-# Check package installation
+# Package verification
 rpm -q package-name
-
-# List enabled services
-systemctl list-unit-files --state=enabled
 ```
 
-## Updating README "What Makes Kyanite Different?"
+## DOCUMENTATION
 
-**CRITICAL**: When modifying packages or configuration, update the README.md section that describes what makes Kyanite different from the base image.
+- **BUILD.md** - Build system architecture details
+- **build/README.md** - Build scripts reference
+- **custom/*/README.md** - Homebrew/Flatpak/ujust guides
+- **README.md** - User-facing overview
 
-The section should include:
-- Added packages (with brief explanation)
-- Added applications (Homebrew, Flatpak)
-- Removed/disabled packages
+## WHEN UPDATING PACKAGES
+
+Update README.md "What's Included" section to reflect:
+- Added packages/apps
+- Removed packages
+- Service changes
 - Configuration changes
-- System services enabled/disabled
 
-Keep descriptions brief and user-focused. Update the "Last updated" date with each change.
+Keep descriptions brief and user-focused.
 
-## Resources
+## REFERENCES
 
-- [Universal Blue Documentation](https://universal-blue.org/)
-- [bootc Documentation](https://containers.github.io/bootc/)
-- [Bluefin Documentation](https://docs.projectbluefin.io/)
-- [Just Manual](https://just.systems/man/en/)
-- [Homebrew Documentation](https://docs.brew.sh/)
-- [Flatpak Documentation](https://docs.flatpak.org/)
-
-## Attribution
-
-When making significant changes or adding features inspired by other projects, maintain proper attribution in commit messages and documentation.
+- [Universal Blue](https://universal-blue.org/) - Ecosystem docs
+- [bootc](https://containers.github.io/bootc/) - Container OS architecture
+- [Just Manual](https://just.systems/man/en/) - Just syntax
