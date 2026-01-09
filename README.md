@@ -1,210 +1,160 @@
-# kyanite
+# Kyanite
 
-A custom bootc operating system based on Fedora Kinoite (KDE Plasma) built using the lessons from [Universal Blue](https://universal-blue.org/).
+A custom bootable container based on Fedora Kinoite, borrowing heavily from the [Universal Blue](https://universal-blue.org/) project. Provides a clean KDE Plasma desktop with essential development tools, container support, and hardware optimizations.
 
-This OS is based on **kinoite-main** (Fedora KDE Plasma) and provides a clean foundation for customization.
+Kyanite is built on Universal Blue's [kinoite-main](https://github.com/ublue-os/main) image, which itself derives from Fedora Kinoite with additional batteries included.
 
-> Be the one who moves, not the one who is moved.
+**Available Variants:**
+- **kyanite** - Clean KDE Plasma desktop for general use and development
+- **kyanite-gaming** - Adds Steam, Gamescope, GameMode, MangoHud, and Sunshine
 
-## What Makes Kyanite Different?
+## Quick Start
 
-Kyanite is a clean KDE Plasma operating system based on Fedora Kinoite, built using the bootc architecture:
+### Install Kyanite
 
-### Base Configuration
-- **Desktop Environment**: KDE Plasma (via kinoite-main base image)
-- **Clean Foundation**: Minimal base with essential integrations
+Switch from any bootc or OSTree-based system:
 
-### Included Integrations
-- **Homebrew Support**: Via @ublue-os/brew for runtime package management
-- **Flatpak Preinstall**: Automatic Flatpak installation on first boot
-- **ujust Commands**: User-friendly command shortcuts
-
-### Customizations
-- **Added Packages**: ansible, chezmoi, fish, syncthing, ptyxis, and more (see `packages.json`)
-- **Removed Packages**: firefox, discover, akonadi, and other unwanted defaults
-- **Additional Apps**: Cider, Tailscale, Sunshine, krunner-bazaar
-- **System Services**: podman.socket, tailscaled, flatpak-preinstall enabled
-
-### Build System
-- Automated builds via GitHub Actions on every commit
-- Renovate setup that keeps your images and actions up to date
-- Automatic cleanup of old images (90+ days) to keep it tidy
-- Pull request workflow - test changes before merging to main
-  - PRs build and validate before merge
-  - `main` branch builds `:stable` images
-- Validates your files on pull requests:
-  - Brewfile, Justfile, ShellCheck, Renovate config, Flatpak validation
-
-## Getting Started
-
-### Using the Image
-
-Switch to Kyanite from an existing bootc system:
 ```bash
+# Standard variant
 sudo bootc switch ghcr.io/alyraffauf/kyanite:stable
+sudo systemctl reboot
+
+# Gaming variant
+sudo bootc switch ghcr.io/alyraffauf/kyanite-gaming:stable
 sudo systemctl reboot
 ```
 
-### Customizing Your Image
+### Switch Between Variants
 
-#### Add System Packages
+```bash
+# To gaming
+sudo bootc switch ghcr.io/alyraffauf/kyanite-gaming:stable
 
-Edit `packages.json` to add or remove packages:
+# To standard
+sudo bootc switch ghcr.io/alyraffauf/kyanite:stable
+```
+
+### First Boot
+
+After installation, Kyanite automatically installs configured Flatpaks and enables Docker, Podman, and Tailscale. Explore available commands:
+
+```bash
+ujust --list
+```
+
+## What's Included
+
+### Development & Containers
+- **Docker CE** - Full Docker with compose and buildx plugins
+- **Podman** - Rootless containers with compose support
+- **Fish Shell** - Modern, user-friendly shell
+
+### Virtualization
+- **QEMU/KVM** - Full virtualization stack with libvirt
+- **AMD ROCm** - GPU compute support for AMD graphics
+
+### Networking & Sync
+- **Tailscale** - Zero-config VPN (pre-installed and enabled)
+- **Syncthing** - Continuous file synchronization
+
+### Desktop
+- **Ptyxis** - Modern terminal emulator
+- **Cider** - Apple Music client
+- **Dynamic Wallpapers** - Time-based wallpaper transitions
+- **Audio Enhancements** - Professional-grade PipeWire plugins
+
+### Gaming Variant Additions
+- Steam, Gamescope, GameMode, MangoHud, Sunshine
+
+### Removed Bloat
+Firefox (replaced with Flathub Flatpak), Akonadi, Plasma Discover, and other unwanted defaults. Use Flatpak for browsers and apps.
+
+## Customization
+
+### System Packages (Build-Time)
+
+Edit [`packages.json`](packages.json):
+
 ```json
 {
-    "include": [
-        "vim",
-        "git",
-        "htop"
-    ],
-    "exclude": [
-        "unwanted-package"
-    ]
+    "include": ["vim", "htop"],
+    "exclude": ["unwanted-package"]
 }
 ```
 
-Packages are installed by `build/20-packages.sh` during build time.
+### Third-Party Software (Build-Time)
 
-#### Install Third-Party Software
+Add to [`build/20-packages.sh`](build/20-packages.sh). See existing examples for Docker, Cider, and Tailscale.
 
-For software from third-party repositories (like Cider or Tailscale), add it to `build/20-packages.sh`. See the existing examples for the pattern.
+### Runtime Applications
 
-#### Configure Applications
-- Add Brewfiles in `custom/brew/` ([guide](custom/brew/README.md))
-- Add Flatpaks in `custom/flatpaks/` ([guide](custom/flatpaks/README.md))
-- Add ujust commands in `custom/ujust/` ([guide](custom/ujust/README.md))
+- **Homebrew** - Add packages to Brewfiles in [`custom/brew/`](custom/brew/)
+- **Flatpak** - Add to `.preinstall` files in [`custom/flatpaks/`](custom/flatpaks/)
+- **Commands** - Create ujust shortcuts in [`custom/ujust/`](custom/ujust/)
 
-### Development Workflow
-
-All changes should be made via pull requests:
-
-1. Create a branch and make your changes
-2. Open a pull request on GitHub
-3. The PR will automatically trigger:
-   - Build validation
-   - Brewfile, Flatpak, Justfile, and shellcheck validation
-   - Test image build
-4. Once checks pass, merge the PR
-5. Merging triggers a `:stable` image build
-
-## Architecture
-
-This OS follows a **multi-stage build architecture** for modularity and maintainability.
-
-### Multi-Stage Build Pattern
-
-**Stage 1: Context (ctx)** - Combines resources from multiple sources:
-- Local build scripts (`/build`)
-- Local custom files (`/custom`, `/files`)
-- Local package definitions (`packages.json`)
-- **@ublue-os/brew** - Homebrew integration
-
-**Stage 2: Base Image**:
-- `ghcr.io/ublue-os/kinoite-main:43` (Fedora 43 KDE Plasma)
-
-### Build Script Organization
-
-Build scripts run in sequence:
-1. **10-build.sh** - Copies custom files, Brewfiles, ujust commands, Flatpak preinstall files
-2. **20-packages.sh** - Installs/removes packages from `packages.json`, installs third-party apps
-3. **30-workarounds.sh** - Applies system workarounds and compatibility fixes
-4. **40-systemd.sh** - Enables/disables systemd services
-5. **90-cleanup.sh** - Final cleanup and configuration
-
-### Benefits of This Architecture
-
-- **Modularity**: Compose your image from reusable OCI containers
-- **Maintainability**: Update shared components independently
-- **Reproducibility**: Renovate automatically updates OCI tags to SHA digests
-- **Clean Base**: KDE Plasma without extra configuration
-
-### OCI Container Resources
-
-Kyanite imports files from this OCI container at build time:
-
-```dockerfile
-COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
-```
-
-Your build scripts can access these files at:
-- `/ctx/oci/brew/` - Homebrew integration files
-
-**Note**: Renovate automatically updates `:latest` tags to SHA digests for reproducible builds.
-
-## Local Testing
-
-Test your changes before pushing:
+## Building Locally
 
 ```bash
-just build              # Build container image
-just build-qcow2        # Build VM disk image
-just run-vm-qcow2       # Test in browser-based VM
+# Build standard variant
+just build
+just build-qcow2
+just run-vm-qcow2
+
+# Build gaming variant
+IMAGE_FLAVOR=gaming just build
+IMAGE_FLAVOR=gaming just build-qcow2
 ```
 
-## Detailed Guides
+## Development Workflow
 
-- [Homebrew/Brewfiles](custom/brew/README.md) - Runtime package management
-- [Flatpak Preinstall](custom/flatpaks/README.md) - GUI application setup
-- [ujust Commands](custom/ujust/README.md) - User convenience commands
-- [Build Scripts](build/README.md) - Build-time customization
-
-## Community
-
-- [Universal Blue Discord](https://discord.gg/WEu6BdFEtp)
-- [bootc Discussion](https://github.com/bootc-dev/bootc/discussions)
-
-## Learn More
-
-- [Universal Blue Documentation](https://universal-blue.org/)
-- [bootc Documentation](https://containers.github.io/bootc/)
+1. Fork and create a feature branch
+2. Make changes and open a pull request
+3. Automated validation runs (shellcheck, YAML, Brewfile, Flatpak)
+4. Merge to `main` triggers `:stable` builds
 
 ## Security
 
-This image is automatically built and updated:
-- Automated security updates via Renovate
-- Build provenance tracking
-- Reproducible builds with SHA-pinned dependencies
-- **Container image signing** with Sigstore Cosign using keyless signing
+All images are cryptographically signed with [Sigstore Cosign](https://github.com/sigstore/cosign) using keyless signing (GitHub OIDC). Renovate automatically updates dependencies.
 
-### Image Signing and Verification
-
-All tagged container images are cryptographically signed using [Sigstore Cosign](https://github.com/sigstore/cosign) with GitHub OIDC tokens (keyless signing). This ensures image authenticity and integrity.
-
-#### Switching from Unverified to Signed Registry
-
-If you're currently using an unverified registry transport, switch to the signed registry:
+### Verify Signatures
 
 ```bash
-# For kyanite
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/alyraffauf/kyanite:stable
-sudo systemctl reboot
-
-# For kyanite-gaming
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/alyraffauf/kyanite-gaming:stable
-sudo systemctl reboot
-```
-
-After rebooting, verify you're using the signed transport:
-
-```bash
-rpm-ostree status
-# Should show "ostree-image-signed:" instead of "ostree-unverified-registry:"
-```
-
-#### Verifying Image Signatures
-
-To manually verify a Kyanite image signature:
-
-```bash
-# Install cosign (if not already installed)
-brew install cosign
-# or download from https://github.com/sigstore/cosign/releases
-
-# Verify the image signature
 cosign verify \
   --certificate-identity-regexp="https://github.com/alyraffauf/kyanite/.*" \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
   ghcr.io/alyraffauf/kyanite:stable
 ```
 
-A successful verification confirms the image was built by the official GitHub Actions workflow and has not been tampered with.
+### Use Signed Transport
+
+```bash
+# Switch to signed registry
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/alyraffauf/kyanite:stable
+sudo systemctl reboot
+
+# Verify
+rpm-ostree status  # Should show "ostree-image-signed:" prefix
+```
+
+## Documentation
+
+- **[VARIANTS.md](VARIANTS.md)** - Variant details
+- **[AGENTS.md](AGENTS.md)** - Comprehensive build guide
+- **[BUILD.md](BUILD.md)** - Build system architecture
+- **[custom/brew/](custom/brew/)** - Homebrew package management
+- **[custom/flatpaks/](custom/flatpaks/)** - Flatpak configuration
+- **[custom/ujust/](custom/ujust/)** - User commands
+
+## Resources
+
+- [Universal Blue](https://universal-blue.org/) - Learn about the ecosystem
+- [bootc Documentation](https://containers.github.io/bootc/) - Container-native OS architecture
+- [Universal Blue Discord](https://discord.gg/WEu6BdFEtp) - Community support
+
+## License
+
+Apache License 2.0 - See [LICENSE](LICENSE)
+
+## Acknowledgments
+
+Built with [Universal Blue](https://universal-blue.org/) tooling and infrastructure. Based on [Fedora Kinoite](https://fedoraproject.org/kinoite/) with [KDE Plasma](https://kde.org/). Powered by [bootc](https://containers.github.io/bootc/).

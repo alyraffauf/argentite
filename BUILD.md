@@ -47,7 +47,7 @@ fi
 
 ### 3. GitHub Actions Workflows
 
-**Reusable Workflow** (`.github/workflows/_build-image.yml`):
+**Reusable Workflow** (`.github/workflows/reusable_build.yml`):
 - Contains all build logic (DRY principle)
 - Accepts inputs: `image_name`, `image_flavor`, `image_desc`, `image_keywords`
 - Handles: checkout, build, tag, push to registry
@@ -57,19 +57,15 @@ fi
 **`.github/workflows/build.yml`**:
 ```yaml
 jobs:
-  build:
-    uses: ./.github/workflows/_build-image.yml
+  build-kyanite:
+    uses: ./.github/workflows/reusable_build.yml
     with:
       image_name: "kyanite"
       image_flavor: "main"
       image_desc: "Kyanite - A clean KDE Plasma bootc image"
-```
 
-**`.github/workflows/build-gaming.yml`**:
-```yaml
-jobs:
-  build:
-    uses: ./.github/workflows/_build-image.yml
+  build-kyanite-gaming:
+    uses: ./.github/workflows/reusable_build.yml
     with:
       image_name: "kyanite-gaming"
       image_flavor: "gaming"
@@ -126,9 +122,9 @@ podman build \
 ### Build Flow
 
 1. **Trigger**: Push to main or manual workflow dispatch
-2. **Matrix**: Both workflows run in parallel
-   - `build.yml` with `IMAGE_FLAVOR=main`
-   - `build-gaming.yml` with `IMAGE_FLAVOR=gaming`
+2. **Jobs**: Both variants build in parallel within `build.yml`
+   - `build-kyanite` job with `IMAGE_FLAVOR=main`
+   - `build-kyanite-gaming` job with `IMAGE_FLAVOR=gaming`
 3. **Reusable Workflow**: Executes build steps
 4. **Conditional Logic**: `20-packages.sh` checks `IMAGE_FLAVOR`
 5. **Output**: Two images pushed to registry
@@ -156,16 +152,15 @@ if [[ "${IMAGE_FLAVOR}" == "dev" ]]; then
 fi
 ```
 
-2. **Create new workflow** `.github/workflows/build-dev.yml`:
+2. **Add new job** to `.github/workflows/build.yml`:
 ```yaml
-name: Build kyanite-dev
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    uses: ./.github/workflows/_build-image.yml
+  build-kyanite-dev:
+    name: Build Kyanite Dev
+    uses: ./.github/workflows/reusable_build.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     with:
       image_name: "kyanite-dev"
       image_flavor: "dev"
@@ -180,9 +175,10 @@ jobs:
 ```
 kyanite/
 ├── .github/workflows/
-│   ├── _build-image.yml     # Reusable workflow (all build logic)
-│   ├── build.yml            # Builds kyanite (main)
-│   └── build-gaming.yml     # Builds kyanite-gaming
+│   ├── reusable_build.yml   # Reusable workflow (all build logic)
+│   ├── build.yml            # Builds both kyanite and kyanite-gaming
+│   ├── validate-*.yml       # Validation workflows
+│   └── clean.yml            # Cleanup old images
 ├── build/
 │   ├── 10-build.sh          # Main build orchestrator
 │   ├── 20-packages.sh       # Package installation + gaming variant logic
