@@ -43,4 +43,11 @@ echo "application/vnd.flatpak.ref=io.github.kolunmi.Bazaar.desktop" >>/usr/share
 
 echo "::endgroup::"
 
+echo "::group:: Commit OSTree"
+
+# Commit the ostree repository to finalize the image
+ostree container commit
+
+echo "::endgroup::"
+
 echo "Final cleanup and configuration complete!"
