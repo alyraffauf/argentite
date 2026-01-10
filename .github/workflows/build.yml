@@ -11,6 +11,10 @@ on:
             - "**/README.md"
     workflow_dispatch:
 
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
 jobs:
     build-kyanite:
         name: Build Kyanite
