@@ -23,9 +23,14 @@ for variant in main "${FLAVOR_PARTS[@]}"; do
     fi
 done
 
-# Copy Brewfiles to standard location
+# Copy Brewfiles to standard location for each flavor
 mkdir -p /usr/share/ublue-os/homebrew/
-cp /ctx/brew/*.Brewfile /usr/share/ublue-os/homebrew/
+for variant in main "${FLAVOR_PARTS[@]}"; do
+    if [[ -d "/ctx/brew/${variant}" ]]; then
+        echo "Copying Brewfiles for: ${variant}"
+        cp "/ctx/brew/${variant}"/*.Brewfile /usr/share/ublue-os/homebrew/ 2>/dev/null || true
+    fi
+done
 
 # Consolidate Just Files for each flavor
 mkdir -p /usr/share/ublue-os/just/

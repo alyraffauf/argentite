@@ -3,6 +3,13 @@
 ### apps.just
 ####################
 
+# Install development tools via Homebrew
+[group('Apps')]
+install-dev-tools:
+    #!/usr/bin/env bash
+    echo "Installing development tools via Homebrew..."
+    brew bundle --file /usr/share/ublue-os/homebrew/development.Brewfile
+
 # Install JetBrains Toolbox for managing JetBrains IDEs
 [group('Apps')]
 install-jetbrains-toolbox:
