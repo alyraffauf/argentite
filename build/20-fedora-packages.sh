@@ -32,10 +32,23 @@ echo "::endgroup::"
 
 echo "::group:: Install Fedora Packages"
 
-# build list of all packages requested for inclusion
+# Build list of all packages requested for inclusion
 readarray -t INCLUDED_PACKAGES < <(jq -r '.include | sort | unique[]' /ctx/packages.json)
 
-# Install Packages
+# Add variant-specific packages based on IMAGE_FLAVOR
+# Supports combined variants (e.g., "gaming-dx-nvidia")
+VARIANT_NAMES=$(jq -r '.variants | keys[]' /ctx/packages.json)
+
+for variant in ${VARIANT_NAMES}; do
+    if [[ ${IMAGE_FLAVOR} =~ ${variant} ]]; then
+        echo "Detected variant: ${variant}"
+        # Get variant-specific packages and add to array
+        readarray -t VARIANT_PACKAGES < <(jq -r ".variants.${variant}.include | sort | unique[]" /ctx/packages.json)
+        INCLUDED_PACKAGES+=("${VARIANT_PACKAGES[@]}")
+    fi
+done
+
+# Install all packages in one command
 if [[ ${#INCLUDED_PACKAGES[@]} -gt 0 ]]; then
     dnf5 -y install \
         "${INCLUDED_PACKAGES[@]}"
@@ -44,28 +57,6 @@ else
 fi
 
 echo "::endgroup::"
-
-# Install variant-specific packages based on IMAGE_FLAVOR
-# Supports combined variants (e.g., "gaming-dx-nvidia")
-VARIANT_NAMES=$(jq -r '.variants | keys[]' /ctx/packages.json)
-
-for variant in ${VARIANT_NAMES}; do
-    if [[ ${IMAGE_FLAVOR} =~ ${variant} ]]; then
-        echo "::group:: Install ${variant} variant packages"
-
-        # Get variant-specific packages
-        readarray -t VARIANT_PACKAGES < <(jq -r ".variants.${variant}.include | sort | unique[]" /ctx/packages.json)
-
-        if [[ ${#VARIANT_PACKAGES[@]} -gt 0 ]]; then
-            dnf5 -y --setopt=install_weak_deps=False install \
-                "${VARIANT_PACKAGES[@]}"
-        else
-            echo "No packages to install for ${variant} variant."
-        fi
-
-        echo "::endgroup::"
-    fi
-done
 
 echo "::group:: Remove Excluded Packages"
 
