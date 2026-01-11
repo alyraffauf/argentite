@@ -30,10 +30,11 @@ fi
 
 echo "::endgroup::"
 
-echo "::group:: Install Fedora Packages"
+echo "::group:: Build Package Lists"
 
-# Build list of all packages requested for inclusion
+# Build list of common packages
 readarray -t INCLUDED_PACKAGES < <(jq -r '.include | sort | unique[]' /ctx/packages.json)
+readarray -t EXCLUDED_PACKAGES < <(jq -r '.exclude | sort | unique[]' /ctx/packages.json)
 
 # Add variant-specific packages based on IMAGE_FLAVOR
 # Supports combined variants (e.g., "gaming-dx-nvidia")
@@ -42,11 +43,20 @@ VARIANT_NAMES=$(jq -r '.variants | keys[]' /ctx/packages.json)
 for variant in ${VARIANT_NAMES}; do
     if [[ ${IMAGE_FLAVOR} =~ ${variant} ]]; then
         echo "Detected variant: ${variant}"
-        # Get variant-specific packages and add to array
+
+        # Add variant-specific includes
         readarray -t VARIANT_PACKAGES < <(jq -r ".variants.${variant}.include | sort | unique[]" /ctx/packages.json)
         INCLUDED_PACKAGES+=("${VARIANT_PACKAGES[@]}")
+
+        # Add variant-specific excludes
+        readarray -t VARIANT_EXCLUDED < <(jq -r ".variants.${variant}.exclude | sort | unique[]" /ctx/packages.json)
+        EXCLUDED_PACKAGES+=("${VARIANT_EXCLUDED[@]}")
     fi
 done
+
+echo "::endgroup::"
+
+echo "::group:: Install Fedora Packages"
 
 # Install all packages in one command
 if [[ ${#INCLUDED_PACKAGES[@]} -gt 0 ]]; then
@@ -60,16 +70,7 @@ echo "::endgroup::"
 
 echo "::group:: Remove Excluded Packages"
 
-# Build list of all packages requested for exclusion (common)
-readarray -t EXCLUDED_PACKAGES < <(jq -r '.exclude | sort | unique[]' /ctx/packages.json)
-
-# Add variant-specific exclusions
-for variant in ${VARIANT_NAMES}; do
-    if [[ ${IMAGE_FLAVOR} =~ ${variant} ]]; then
-        readarray -t VARIANT_EXCLUDED < <(jq -r ".variants.${variant}.exclude | sort | unique[]" /ctx/packages.json)
-        EXCLUDED_PACKAGES+=("${VARIANT_EXCLUDED[@]}")
-    fi
-done
+# Filter to only packages that are actually installed
 
 if [[ ${#EXCLUDED_PACKAGES[@]} -gt 0 ]]; then
     INSTALLED_EXCLUDED=()
