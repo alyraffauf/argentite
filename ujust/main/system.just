@@ -88,16 +88,21 @@ update-and-reboot:
     source /usr/lib/ujust/ujust.sh
     echo "Updating system..."
     sudo bootc upgrade
-    if gum confirm "Reboot now to apply updates?"; then
-        systemctl reboot
-    else
-        echo "Reboot later to apply updates."
-    fi
+    OPTION=$(Choose "Reboot now" "Reboot later")
+    case "$OPTION" in
+        "Reboot now")
+            systemctl reboot
+            ;;
+        "Reboot later")
+            echo "Reboot later to apply updates."
+            ;;
+    esac
 
 # Change the current user's shell
 [group('System')]
 change-shell:
     #!/usr/bin/env bash
+    source /usr/lib/ujust/ujust.sh
     set -euo pipefail
 
     # Detect available shells in /usr/bin
@@ -119,32 +124,20 @@ change-shell:
         exit 1
     fi
 
-    # Display menu
-    echo "Available shells:"
-    for i in "${!available_shells[@]}"; do
-        idx=$((i + 1))
-        echo "$idx) ${available_shells[$i]} (${shell_paths[$i]})"
-    done
-    custom_idx=$((${#available_shells[@]} + 1))
-    echo "$custom_idx) custom (enter full path)"
-    echo ""
+    # Build shell options array for Choose
+    available_shells+=("custom")
+    CHOICE=$(Choose "${available_shells[@]}")
 
-    read -p "Select shell (1-$custom_idx): " choice
-
-    # Validate choice
-    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
-        echo "Invalid choice. Exiting."
-        exit 1
-    fi
-
-    if [ "$choice" -eq "$custom_idx" ]; then
+    if [ "$CHOICE" == "custom" ]; then
         read -p "Enter full path to shell executable: " SHELL_PATH
-    elif [ "$choice" -ge 1 ] && [ "$choice" -le "${#available_shells[@]}" ]; then
-        array_idx=$((choice - 1))
-        SHELL_PATH="${shell_paths[$array_idx]}"
     else
-        echo "Invalid choice. Exiting."
-        exit 1
+        # Find the index of selected shell
+        for i in "${!available_shells[@]}"; do
+            if [ "${available_shells[$i]}" == "$CHOICE" ]; then
+                SHELL_PATH="${shell_paths[$i]}"
+                break
+            fi
+        done
     fi
 
     # Verify the shell exists
@@ -157,14 +150,16 @@ change-shell:
     # Verify shell is in /etc/shells
     if ! grep -q "^${SHELL_PATH}$" /etc/shells 2>/dev/null; then
         echo "Warning: $SHELL_PATH is not listed in /etc/shells"
-        read -p "Add it to /etc/shells? (y/n): " add_shell
-        if [[ "$add_shell" =~ ^[Yy]$ ]]; then
-            echo "$SHELL_PATH" | sudo tee -a /etc/shells > /dev/null
-            echo "Added $SHELL_PATH to /etc/shells"
-        else
-            echo "Shell must be in /etc/shells to proceed. Exiting."
-            exit 1
-        fi
+        RESPONSE=$(Choose "Add to /etc/shells" "Cancel")
+        case "$RESPONSE" in
+            "Add to /etc/shells")
+                echo "$SHELL_PATH" | sudo tee -a /etc/shells > /dev/null
+                ;;
+            "Cancel")
+                echo "Shell must be in /etc/shells to proceed. Exiting."
+                exit 1
+                ;;
+        esac
     fi
 
     # Change the shell
@@ -172,5 +167,5 @@ change-shell:
     sudo usermod --shell "$SHELL_PATH" "$USER"
 
     echo ""
-    echo "✓ Shell changed successfully to $SHELL_PATH"
+    echo "Shell changed successfully to $SHELL_PATH"
     echo "Please log out and log back in for changes to take effect."
