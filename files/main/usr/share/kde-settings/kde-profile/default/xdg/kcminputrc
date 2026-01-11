@@ -1,0 +1,4 @@
+[Libinput][Defaults][Touchpad]
+ClickMethod=2
+NaturalScroll=true
+TapToClick=false
