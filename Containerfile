@@ -19,8 +19,9 @@ FROM ${BREW_IMAGE}@${BREW_IMAGE_SHA} AS brew
 FROM scratch AS ctx
 COPY /build /build
 COPY /files /files
-COPY /packages.json /packages.json
-COPY /services.json /services.json
+COPY /brew /brew
+COPY /flatpaks /flatpaks
+COPY /ujust /ujust
 
 # Import Homebrew files
 COPY --from=brew /system_files /oci/brew
