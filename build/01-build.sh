@@ -33,16 +33,11 @@ find /ctx/custom/ujust -iname '*.just' -exec printf "\n\n" \; -exec cat {} \; >>
 
 # Copy Flatpak preinstall files for each flavor
 mkdir -p /usr/share/flatpak/preinstall.d/
-for variant_dir in /ctx/flatpaks/*/; do
-    variant=$(basename "$variant_dir")
-    # Check if this variant is in the IMAGE_FLAVOR (exact match)
-    for flavor in "${FLAVOR_PARTS[@]}"; do
-        if [[ $variant == "$flavor" ]]; then
-            echo "Installing Flatpak preinstall for variant: ${variant}"
-            cp "/ctx/flatpaks/${variant}/${variant}.preinstall" "/usr/share/flatpak/preinstall.d/kyanite-${variant}.preinstall"
-            break
-        fi
-    done
+for variant in main "${FLAVOR_PARTS[@]}"; do
+    if [[ -f "/ctx/flatpaks/${variant}.preinstall" ]]; then
+        echo "Installing Flatpak preinstall for: ${variant}"
+        cp "/ctx/flatpaks/${variant}.preinstall" "/usr/share/flatpak/preinstall.d/kyanite-${variant}.preinstall"
+    fi
 done
 
 echo "::endgroup::"
