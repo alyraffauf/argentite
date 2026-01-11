@@ -14,7 +14,7 @@ echo "::group:: Lock Plasma Desktop Version"
 dnf5 versionlock add plasma-desktop
 
 # Explicitly install KDE Plasma related packages with the same version as in base image
-dnf5 -y install plasma-firewall-$(rpm -q --qf "%{VERSION}" plasma-desktop)
+dnf5 -y install "plasma-firewall-$(rpm -q --qf "%{VERSION}" plasma-desktop)"
 
 echo "::endgroup::"
 
@@ -32,25 +32,30 @@ echo "::endgroup::"
 
 echo "::group:: Build Package Lists"
 
-# Build list of common packages
-readarray -t INCLUDED_PACKAGES < <(jq -r '.include | sort | unique[]' /ctx/packages.json)
-readarray -t EXCLUDED_PACKAGES < <(jq -r '.exclude | sort | unique[]' /ctx/packages.json)
+# Initialize package arrays
+INCLUDED_PACKAGES=()
+EXCLUDED_PACKAGES=()
 
-# Add variant-specific packages based on IMAGE_FLAVOR
-# Supports combined variants (e.g., "gaming-dx-nvidia")
-VARIANT_NAMES=$(jq -r '.variants | keys[]' /ctx/packages.json)
+# Split IMAGE_FLAVOR into array of variant names (e.g., "gaming-dx" -> ["gaming", "dx"])
+# Always includes "main" as the base
+IFS='-' read -ra FLAVOR_PARTS <<<"${IMAGE_FLAVOR}"
 
-for variant in ${VARIANT_NAMES}; do
-    if [[ ${IMAGE_FLAVOR} =~ ${variant} ]]; then
-        echo "Detected variant: ${variant}"
+for variant in main "${FLAVOR_PARTS[@]}"; do
+    # Check if variant exists in packages.json
+    if jq -e ".variants.${variant}" /ctx/packages.json >/dev/null 2>&1; then
+        echo "Processing packages for variant: ${variant}"
 
-        # Add variant-specific includes
-        readarray -t VARIANT_PACKAGES < <(jq -r ".variants.${variant}.include | sort | unique[]" /ctx/packages.json)
-        INCLUDED_PACKAGES+=("${VARIANT_PACKAGES[@]}")
+        # Add variant-specific includes if they exist
+        if jq -e ".variants.${variant}.include" /ctx/packages.json >/dev/null 2>&1; then
+            readarray -t VARIANT_PACKAGES < <(jq -r ".variants.${variant}.include | sort | unique[]" /ctx/packages.json)
+            INCLUDED_PACKAGES+=("${VARIANT_PACKAGES[@]}")
+        fi
 
-        # Add variant-specific excludes
-        readarray -t VARIANT_EXCLUDED < <(jq -r ".variants.${variant}.exclude | sort | unique[]" /ctx/packages.json)
-        EXCLUDED_PACKAGES+=("${VARIANT_EXCLUDED[@]}")
+        # Add variant-specific excludes if they exist
+        if jq -e ".variants.${variant}.exclude" /ctx/packages.json >/dev/null 2>&1; then
+            readarray -t VARIANT_EXCLUDED < <(jq -r ".variants.${variant}.exclude | sort | unique[]" /ctx/packages.json)
+            EXCLUDED_PACKAGES+=("${VARIANT_EXCLUDED[@]}")
+        fi
     fi
 done
 
