@@ -25,7 +25,7 @@ done
 
 # Copy Brewfiles to standard location
 mkdir -p /usr/share/ublue-os/homebrew/
-cp /ctx/custom/brew/*.Brewfile /usr/share/ublue-os/homebrew/
+cp /ctx/brew/*.Brewfile /usr/share/ublue-os/homebrew/
 
 # Consolidate Just Files for each flavor
 mkdir -p /usr/share/ublue-os/just/
