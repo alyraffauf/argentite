@@ -19,7 +19,6 @@ FROM ${BREW_IMAGE}@${BREW_IMAGE_SHA} AS brew
 FROM scratch AS ctx
 COPY /build /build
 COPY /files /files
-COPY /custom /custom
 COPY /packages.json /packages.json
 COPY /services.json /services.json
 
