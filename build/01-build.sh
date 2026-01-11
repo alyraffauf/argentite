@@ -11,28 +11,16 @@ set -eoux pipefail
 
 echo "::group:: Copy Custom Files"
 
-# Copy shared system files
-rsync -rvKl /ctx/files/shared/ /
-
-# Copy variant-specific system files based on IMAGE_FLAVOR
+# Copy system files based on IMAGE_FLAVOR
 # Split IMAGE_FLAVOR into array of variant names (e.g., "gaming-dx" -> ["gaming", "dx"])
+# Always includes "main" as the base
 IFS='-' read -ra FLAVOR_PARTS <<<"${IMAGE_FLAVOR}"
 
-for variant_dir in /ctx/files/*/; do
-    variant=$(basename "$variant_dir")
-    # Skip shared directory (already copied above)
-    if [[ $variant == "shared" ]]; then
-        continue
+for variant in main "${FLAVOR_PARTS[@]}"; do
+    if [[ -d "/ctx/files/${variant}" ]]; then
+        echo "Copying files for: ${variant}"
+        rsync -rvKl "/ctx/files/${variant}/" /
     fi
-
-    # Check if this variant is in the IMAGE_FLAVOR (exact match)
-    for flavor in "${FLAVOR_PARTS[@]}"; do
-        if [[ $variant == "$flavor" ]]; then
-            echo "Detected variant: ${variant}"
-            rsync -rvKl "/ctx/files/${variant}/" /
-            break
-        fi
-    done
 done
 
 # Copy Brewfiles to standard location
