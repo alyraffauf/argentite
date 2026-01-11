@@ -6,7 +6,7 @@ permissions:
 on:
     pull_request:
         paths:
-            - "custom/ujust/**"
+            - "ujust/**"
             - "Justfile"
 
 jobs:
@@ -35,8 +35,8 @@ jobs:
                   echo "✓ Justfile passed validation"
                   echo "::endgroup::"
 
-                  # Validate custom ujust files
-                  find "custom/ujust" -iname '*.just' -print0 | \
+                  # Validate ujust files
+                  find "ujust" -iname '*.just' -print0 | \
                     while IFS= read -r -d '' justfile; do
                       echo "::group::Validating $(basename "${justfile}")"
                       set -x

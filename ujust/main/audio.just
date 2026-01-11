@@ -1,6 +1,6 @@
 # vim: set ft=make :
 #######################
-### custom-audio.just
+### audio.just
 #######################
 
 # Toggle PipeWire DSP for HP OmniBook Ultra (FH0xxx)

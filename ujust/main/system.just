@@ -1,9 +1,7 @@
 # vim: set ft=make :
 #######################
-### custom-system.just
+### system.just
 #######################
-## Example system configuration commands
-## These are simplified examples adapted from Bluefin
 
 # Run a system benchmark (requires stress-ng from Homebrew)
 [group('System')]
@@ -76,6 +74,11 @@ clean-containers:
     echo "Cleaning up Podman containers, images, and volumes..."
     podman system prune -af
     podman volume prune -f
+    if command -v docker &>/dev/null; then
+        echo "Cleaning up Docker containers, images, and volumes..."
+        docker system prune -af
+        docker volume prune -f
+    fi
     echo "Cleanup complete!"
 
 # Update system and reboot if needed

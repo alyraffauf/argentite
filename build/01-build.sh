@@ -27,9 +27,14 @@ done
 mkdir -p /usr/share/ublue-os/homebrew/
 cp /ctx/custom/brew/*.Brewfile /usr/share/ublue-os/homebrew/
 
-# Consolidate Just Files
+# Consolidate Just Files for each flavor
 mkdir -p /usr/share/ublue-os/just/
-find /ctx/custom/ujust -iname '*.just' -exec printf "\n\n" \; -exec cat {} \; >>/usr/share/ublue-os/just/60-custom.just
+for variant in main "${FLAVOR_PARTS[@]}"; do
+    if [[ -d "/ctx/ujust/${variant}" ]]; then
+        echo "Installing ujust recipes for: ${variant}"
+        find "/ctx/ujust/${variant}" -iname '*.just' -exec printf "\n\n" \; -exec cat {} \; >>/usr/share/ublue-os/just/60-custom.just
+    fi
+done
 
 # Copy Flatpak preinstall files for each flavor
 mkdir -p /usr/share/flatpak/preinstall.d/
