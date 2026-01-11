@@ -1,83 +1,61 @@
 # Agent Instructions for Kyanite
 
-Kyanite is a bootc OS based on Fedora Kinoite (KDE Plasma). This guide covers critical rules and quick references for AI agents.
+Kyanite is a bootc OS based on Fedora Kinoite (KDE Plasma).
 
-## PRE-COMMIT CHECKLIST ⚠️
+## PRE-COMMIT CHECKLIST
 
-**Execute before EVERY commit:**
+1. **Conventional Commits** - Format: `type(scope): description`
+2. **Shellcheck** - Run on all `.sh` files
+3. **Validate** - `jq empty packages.json services.json` and `just --list`
+4. **Confirm** - Always ask before committing
 
-1. **Conventional Commits** - Required format: `type(scope): description`
-2. **Shellcheck** - Run on all modified `.sh` files
-3. **YAML validation** - Validate all modified `.yml` files
-4. **JSON validation** - Run `jq empty packages.json services.json` to validate
-5. **Justfile syntax** - Run `just --list` to verify
-6. **User confirmation** - Always confirm before committing
-
-**Valid commit types**: `feat`, `fix`, `docs`, `chore`, `build`, `ci`, `refactor`, `test`
-
-**Never commit files with syntax errors.**
+Valid types: `feat`, `fix`, `docs`, `chore`, `build`, `ci`, `refactor`, `test`
 
 ## CRITICAL RULES
 
-1. **ALWAYS** use `dnf5` exclusively (never `dnf`, `yum`, or `rpm-ostree`)
-2. **ALWAYS** use `-y` flag for non-interactive installs
-3. **ALWAYS** disable COPR repos after installation via `copr_install_isolated`
-4. **NEVER** use `dnf5` in ujust files (immutable system)
-5. **NEVER** commit secrets or private keys
-6. **NEVER** hardcode variant packages or services in build scripts
-7. System packages → `packages.json` under `"include"`
-8. Variant packages → `packages.json` under `"variants.{name}.include"`
-9. System services → `services.json` under `"system.enable"`
-10. Variant services → `services.json` under `"variants.{name}.system.enable"`
-11. Third-party software → `build/25-third-party-packages.sh`
+1. Use `dnf5 -y` exclusively (never `dnf`, `yum`, `rpm-ostree`)
+2. Disable COPR repos after install via `copr_install_isolated`
+3. Never use `dnf5` in ujust files (immutable system)
+4. Never hardcode variant packages/services in build scripts
+5. System packages → `packages.json` `"include"`
+6. Variant packages → `packages.json` `"variants.{name}.include"`
+7. System services → `services.json` `"system.enable"`
+8. Variant services → `services.json` `"variants.{name}.system.enable"`
+9. Third-party software → `build/25-third-party-packages.sh`
 
 ## QUICK REFERENCE
 
-| Task                  | Location                       | Command/Format                                        |
-| --------------------- | ------------------------------ | ----------------------------------------------------- |
-| Add system package    | `packages.json`                | Add to `"include"` array                              |
-| Add variant package   | `packages.json`                | Add to `"variants.{name}.include"` array              |
-| Remove package        | `packages.json`                | Add to `"exclude"` array                              |
-| Remove variant pkg    | `packages.json`                | Add to `"variants.{name}.exclude"` array              |
-| Enable system service | `services.json`                | Add to `"system.enable"` array                        |
-| Enable user service   | `services.json`                | Add to `"user.enable"` array                          |
-| Enable variant svc    | `services.json`                | Add to `"variants.{name}.system.enable"` array        |
-| Disable service       | `services.json`                | Add to `"system.disable"` or `"user.disable"` array   |
-| Add 3rd-party RPM     | `build/25-third-party-*.sh`    | See Docker/Cider/Tailscale examples                   |
-| Add COPR package      | `build/25-third-party-*.sh`    | `copr_install_isolated "owner/repo" "pkg"`            |
-| Add Homebrew package  | `custom/brew/*.Brewfile`       | `brew "package-name"`                                 |
-| Add Flatpak           | `custom/flatpaks/*.preinstall` | `[Flatpak Preinstall app.id]`                         |
-| Add ujust command     | `custom/ujust/*.just`          | Just recipe syntax                                    |
-| Test locally          | Terminal                       | `just build && just build-qcow2 && just run-vm-qcow2` |
+| Task                   | Location                       | Format                                     |
+| ---------------------- | ------------------------------ | ------------------------------------------ |
+| Add system package     | `packages.json`                | `"include"` array                          |
+| Add variant package    | `packages.json`                | `"variants.{name}.include"` array          |
+| Remove package         | `packages.json`                | `"exclude"` array                          |
+| Enable system service  | `services.json`                | `"system.enable"` array                    |
+| Enable variant service | `services.json`                | `"variants.{name}.system.enable"` array    |
+| Add 3rd-party RPM      | `build/25-third-party-*.sh`    | See examples                               |
+| Add COPR package       | `build/25-third-party-*.sh`    | `copr_install_isolated "owner/repo" "pkg"` |
+| Add Homebrew package   | `custom/brew/*.Brewfile`       | `brew "package-name"`                      |
+| Add Flatpak            | `custom/flatpaks/*.preinstall` | `[Flatpak Preinstall app.id]`              |
+| Add ujust command      | `custom/ujust/*.just`          | Just recipe syntax                         |
 
-## IMAGE VARIANTS
+## VARIANTS
 
-Multiple variants can be built from single Containerfile using `IMAGE_FLAVOR`:
+Built images: `kyanite`, `kyanite-dx`, `kyanite-gaming`, `kyanite-dx-gaming`
 
-- **main** (default) → `kyanite` - Base KDE Plasma desktop
-- **gaming** → `kyanite-gaming` - Adds Steam, Gamescope, GameMode, MangoHud, Sunshine
-- **Combined variants** → `kyanite-gaming-dx-nvidia` - Multiple features combined
+Variants use **exact matching** by splitting `IMAGE_FLAVOR` on hyphens:
 
-### Variant Architecture
+- `IMAGE_FLAVOR=gaming` → `["gaming"]`
+- `IMAGE_FLAVOR=dx-gaming` → `["dx", "gaming"]` (installs both)
 
-All variants use **exact matching** (not substring matching) by splitting `IMAGE_FLAVOR` on hyphens:
-
-- `IMAGE_FLAVOR=main` → `["main"]` → Installs main-specific packages/services/files
-- `IMAGE_FLAVOR=gaming` → `["gaming"]` → Installs gaming-specific packages/services/files
-- `IMAGE_FLAVOR=gaming-dx` → `["gaming", "dx"]` → Installs both gaming AND dx packages/services/files
-
-### Four Declarative Layers
+### Configuration Layers
 
 **1. Packages** (`packages.json`):
 
 ```json
 {
-    "include": ["common-package"],
+    "include": ["common-pkg"],
     "variants": {
-        "gaming": {
-            "include": ["steam", "gamescope"],
-            "exclude": []
-        }
+        "gaming": { "include": ["steam"], "exclude": [] }
     }
 }
 ```
@@ -86,11 +64,9 @@ All variants use **exact matching** (not substring matching) by splitting `IMAGE
 
 ```json
 {
-    "system": { "enable": ["docker.socket"] },
+    "system": { "enable": ["docker.socket"], "disable": [] },
     "variants": {
-        "gaming": {
-            "system": { "disable": ["sunshine.service"] }
-        }
+        "gaming": { "system": { "disable": ["sunshine.service"] } }
     }
 }
 ```
@@ -98,94 +74,57 @@ All variants use **exact matching** (not substring matching) by splitting `IMAGE
 **3. Files** (`files/{variant}/`):
 
 - `files/shared/` → Always copied
-- `files/main/` → Copied when `IMAGE_FLAVOR` contains "main"
-- `files/gaming/` → Copied when `IMAGE_FLAVOR` contains "gaming"
+- `files/gaming/` → Copied when variant contains "gaming"
 
-**4. KDE Branding** (dynamic):
+**4. Branding** (automatic):
 
-- `IMAGE_FLAVOR=main` → Shows "Variant=DESKTOP" in KDE About
-- `IMAGE_FLAVOR=gaming` → Shows "Variant=GAMING"
-- `IMAGE_FLAVOR=gaming-dx-nvidia` → Shows "Variant=DX+GAMING+NVIDIA" (alphabetically sorted)
+- `IMAGE_FLAVOR=dx-gaming` → KDE About shows "Variant=DX+GAMING"
 
-## BUILD SCRIPTS (Execution Order)
+## BUILD SCRIPTS (Order)
 
-1. `10-build.sh` - Copies files, orchestrates build (dynamic variant file detection)
-2. `20-fedora-packages.sh` - Fedora packages (reads `packages.json` for variants)
-3. `25-third-party-packages.sh` - Third-party repos (Docker, Tailscale, COPR)
-4. `30-workarounds.sh` - System compatibility fixes
-5. `40-systemd.sh` - Service configuration (reads `services.json` for variants)
-6. `80-branding.sh` - OS release branding + dynamic KDE variant display
-7. `90-cleanup.sh` - Final cleanup
+1. `10-build.sh` - Orchestration, file copying
+2. `20-fedora-packages.sh` - Packages from packages.json
+3. `25-third-party-packages.sh` - Docker, Tailscale, COPR
+4. `30-workarounds.sh` - Compatibility fixes
+5. `40-systemd.sh` - Services from services.json
+6. `80-branding.sh` - OS release + KDE branding
+7. `90-cleanup.sh` - Cleanup
 
-Details: See `build/README.md`
+See `build/README.md` for details.
 
-## WHERE TO ADD THINGS
+## STRUCTURE
 
-### Build-time (Baked into image)
+```
+kyanite/
+├── Containerfile          # Build definition
+├── packages.json          # Package lists
+├── services.json          # Service configuration
+├── build/                 # Build scripts
+├── files/                 # System files
+│   ├── shared/           # All variants
+│   └── {variant}/        # Variant-specific
+├── custom/                # Runtime customizations
+│   ├── brew/             # Brewfiles
+│   ├── flatpaks/         # Flatpak configs
+│   └── ujust/            # User commands
+└── .github/workflows/    # CI/CD
+```
 
-- **System packages** → `packages.json` (`"include"` array)
-- **Variant packages** → `packages.json` (`"variants.{name}.include"`)
-- **System services** → `services.json` (`"system.enable"` / `"user.enable"`)
-- **Variant services** → `services.json` (`"variants.{name}.system.enable"`)
-- **Third-party RPMs** → `build/25-third-party-packages.sh`
-- **System files (all variants)** → `files/shared/`
-- **Variant-specific files** → `files/{variant}/` (auto-detected from directory names)
+## LOCAL TESTING
 
-### Runtime (User installs after deployment)
+```bash
+just build                    # Build container
+just build-qcow2             # Build VM image
+just run-vm-qcow2            # Test in VM
 
-- **CLI tools** → `custom/brew/*.Brewfile`
-- **GUI apps** → `custom/flatpaks/*.preinstall`
-- **User commands** → `custom/ujust/*.just`
+# Variants
+IMAGE_FLAVOR=gaming just build
+IMAGE_FLAVOR=dx-gaming just build
+```
 
 ## COMMON PATTERNS
 
-### Add Variant Packages
-
-```json
-// In packages.json
-{
-    "variants": {
-        "gaming": {
-            "include": ["steam", "gamescope"],
-            "exclude": []
-        },
-        "dx": {
-            "include": ["dev-tools", "gcc"],
-            "exclude": ["firefox"]
-        }
-    }
-}
-```
-
-### Enable Systemd Services
-
-```json
-// In services.json
-{
-    "system": {
-        "enable": ["docker.socket", "podman.socket"],
-        "disable": []
-    },
-    "user": {
-        "enable": ["bazaar.service"],
-        "disable": []
-    },
-    "variants": {
-        "gaming": {
-            "system": {
-                "enable": [],
-                "disable": ["sunshine.service"]
-            },
-            "user": {
-                "enable": [],
-                "disable": []
-            }
-        }
-    }
-}
-```
-
-### Add Third-Party RPM Repository
+### Add Third-Party RPM
 
 ```bash
 # In build/25-third-party-packages.sh
@@ -202,115 +141,22 @@ source /ctx/build/copr-helpers.sh
 copr_install_isolated "owner/repo" "package-name"
 ```
 
-### Add Brewfile Shortcut
-
-```just
-# In custom/ujust/custom-apps.just
-[group('Apps')]
-install-dev-tools:
-    brew bundle --file /usr/share/ublue-os/homebrew/development.Brewfile
-```
-
-## STRUCTURE
-
-```
-kyanite/
-├── Containerfile          # Build definition
-├── Justfile              # Local automation
-├── packages.json         # Package lists
-├── services.json         # Systemd unit configuration
-├── build/                # Build scripts (see build/README.md)
-├── files/                # System files
-│   ├── shared/          # All variants (always copied)
-│   ├── main/            # Main variant only (exact match)
-│   ├── gaming/          # Gaming variant (exact match)
-│   ├── dx/              # DX variant (exact match)
-│   └── {variant}/       # Any variant dir auto-detected via exact matching
-├── custom/               # Runtime customizations
-│   ├── brew/            # Brewfiles
-│   ├── flatpaks/        # Preinstall configs
-│   └── ujust/           # User commands
-└── .github/workflows/   # CI/CD
-```
-
-## LOCAL TESTING
-
-```bash
-just build                    # Build container
-just build-qcow2             # Build VM image
-just run-vm-qcow2            # Test in browser VM
-
-# Gaming variant
-IMAGE_FLAVOR=gaming just build
-IMAGE_FLAVOR=gaming just build-qcow2
-
-# Combined variants
-IMAGE_FLAVOR=gaming-dx just build
-IMAGE_FLAVOR=dx-gaming-nvidia just build
-```
-
-## WORKFLOWS
-
-**Development**: Branch → PR → Auto-validation → Merge → Build `:stable` + Sign
-
-**Image Tags**:
-
-- `:stable` - Latest from main
-- `:stable.YYYYMMDD` - Datestamped
-- `:pr-123` - PR builds (unsigned)
-
-**Signing**: Automatic via Cosign v3.0.3 (keyless OIDC) for main branch only
-
 ## UJUST RULES
 
-- **NEVER** use `dnf5` (system is immutable)
+- Never use `dnf5` (system is immutable)
 - Create shortcuts to Brewfiles/Flatpaks
 - Use `[group('Category')]` for organization
-- Source `/usr/lib/ujust/ujust.sh` for helpers (`Choose`, `Confirm`)
-
-## DEBUGGING
-
-```bash
-# Build logs
-podman logs <container-id>
-
-# Service status
-systemctl status service-name
-journalctl -u service-name
-
-# Package verification
-rpm -q package-name
-```
+- Source `/usr/lib/ujust/ujust.sh` for helpers
 
 ## DOCUMENTATION
 
-- **BUILD.md** - Build system architecture details
+- **BUILD.md** - Build system architecture
 - **build/README.md** - Build scripts reference
-- **custom/\*/README.md** - Homebrew/Flatpak/ujust guides
-- **README.md** - User-facing overview
-
-## WHEN UPDATING PACKAGES
-
-Update README.md "What's Included" section to reflect:
-
-- Added packages/apps
-- Removed packages
-- Service changes
-- Configuration changes
-
-Keep descriptions brief and user-focused.
-
-## VARIANT SYSTEM BENEFITS
-
-✅ **Declarative** - Everything in JSON/directories, not hardcoded bash
-✅ **Scalable** - Add new variants without modifying build scripts
-✅ **Flexible** - Combine any variants (gaming-dx-nvidia)
-✅ **Consistent** - Same pattern across packages, services, files, and branding
-✅ **Efficient** - Single loop, single install command
-✅ **Automatic** - Exact matching prevents false matches (main ≠ domain)
+- **custom/\*/README.md** - Runtime customization guides
+- **README.md** - User overview
 
 ## REFERENCES
 
-- [Universal Blue](https://universal-blue.org/) - Ecosystem docs
-- [bootc](https://containers.github.io/bootc/) - Container OS architecture
-- [Just Manual](https://just.systems/man/en/) - Just syntax
+- [Universal Blue](https://universal-blue.org/)
+- [bootc](https://containers.github.io/bootc/)
+- [Just Manual](https://just.systems/man/en/)
