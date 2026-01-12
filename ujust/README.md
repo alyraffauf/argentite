@@ -1,6 +1,6 @@
 # ujust - User-facing Just Commands
 
-This directory contains Just recipe files organized by flavor that will be installed into your custom image and made available to end users via the `ujust` command.
+This directory contains Just recipe files organized by variant that will be installed into your custom image and made available to end users via the `ujust` command.
 
 ## What is ujust?
 
@@ -8,13 +8,13 @@ This directory contains Just recipe files organized by flavor that will be insta
 
 ## How It Works
 
-1. **During Build**: All `.just` files from the appropriate flavor directories are consolidated and copied to `/usr/share/ublue-os/just/60-custom.just` in the image based on `IMAGE_FLAVOR`
+1. **During Build**: All `.just` files from the appropriate variant directories are consolidated and copied to `/usr/share/ublue-os/just/60-custom.just` in the image based on `IMAGE_FLAVOR`
 2. **After Installation**: Users run `ujust` to see available commands
 3. **User Experience**: Simple command interface for system tasks
 
 ## Directory Structure
 
-Organize `.just` files by image flavor:
+Organize `.just` files by image variant:
 
 ```
 ujust/

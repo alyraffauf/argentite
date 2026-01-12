@@ -16,9 +16,9 @@ Kyanite improves Fedora Kinoite with:
 - **Nice to haves** - Tailscale VPN, Syncthing, dynamic wallpapers.
 - **Gaming necessities** - Steam, Gamescope, MangoHud, etc.
 - **Audio enhancements** - Improved audio DSPs for select hardware.
-- **Flexible variants** - Declarative flavors you can mix and match.
+- **Flexible variants** - Declarative variants you can mix and match.
 
-## Available Flavors
+## Available Variants
 
 All images are built and published automatically:
 
@@ -57,12 +57,12 @@ ujust --list
 
 Kyanite uses a declarative configuration system:
 
-- **[packages.json](packages.json)** - Define packages per flavor.
+- **[packages.json](packages.json)** - Define packages per variant.
 - **[services.json](services.json)** - Configure systemd units.
-- **files/{variant}/** - Flavor-specific system files (main, gaming, dx).
+- **files/{variant}/** - Variant-specific system files (main, gaming, dx).
 - **[brew/](brew/)** - Homebrew packages (runtime installation).
-- **[flatpaks/](flatpaks/)** - Flatpak preinstall files by flavor.
-- **[ujust/](ujust/)** - Custom `ujust` commands by flavor.
+- **[flatpaks/](flatpaks/)** - Flatpak preinstall files by variant.
+- **[ujust/](ujust/)** - Custom `ujust` commands by variant.
 
 See the documentation files for detailed configuration options.
 

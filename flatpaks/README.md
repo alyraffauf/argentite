@@ -1,15 +1,15 @@
 # Flatpak Preinstall Integration
 
-This directory contains Flatpak preinstall configuration files for each image flavor.
+This directory contains Flatpak preinstall configuration files for each image variant.
 
 ## Files
 
-Each `.preinstall` file corresponds to an image flavor:
+Each `.preinstall` file corresponds to an image variant:
 
-- `main.preinstall` - Base flavor flatpaks (applies to all kyanite images)
-- `gaming.preinstall` - Gaming flavor flatpaks (applies to kyanite-gaming and kyanite-dx-gaming)
+- `main.preinstall` - Base variant flatpaks (applies to all kyanite images)
+- `gaming.preinstall` - Gaming variant flatpaks (applies to kyanite-gaming and kyanite-dx-gaming)
 
-Files are copied to `/usr/share/flatpak/preinstall.d/kyanite-{flavor}.preinstall` in the built image based on the `IMAGE_FLAVOR` variable during the build.
+Files are copied to `/usr/share/flatpak/preinstall.d/kyanite-{variant}.preinstall` in the built image based on the `IMAGE_FLAVOR` variable during the build.
 
 ## What is Flatpak Preinstall?
 
@@ -17,7 +17,7 @@ Flatpak preinstall is a feature that allows system administrators to define Flat
 
 ## How It Works
 
-1. **During Build**: Files from the appropriate flavor directories are copied to `/usr/share/flatpak/preinstall.d/` in the image based on the `IMAGE_FLAVOR` variable
+1. **During Build**: Files from the appropriate variant directories are copied to `/usr/share/flatpak/preinstall.d/` in the image based on the `IMAGE_FLAVOR` variable
 2. **On First Boot**: After user setup completes, the system reads these files and installs the specified Flatpaks
 3. **User Experience**: Applications appear automatically after first login
 
@@ -63,10 +63,10 @@ See: https://docs.flatpak.org/en/latest/flatpak-command-reference.html#flatpak-p
 
 1. Edit the appropriate `.preinstall` file (e.g., `main.preinstall` or `gaming.preinstall`)
 2. Add Flatpak references in INI format with `[Flatpak Preinstall NAME]` sections
-3. Build your image - the files will be copied to `/usr/share/flatpak/preinstall.d/` based on the image flavor
+3. Build your image - the files will be copied to `/usr/share/flatpak/preinstall.d/` based on the image variant
 4. After user setup completes, Flatpaks will be automatically installed
 
-**Note:** The `dx` flavor does not have its own flatpak preinstall file - it inherits from other flavors only.
+**Note:** The `dx` variant does not have its own flatpak preinstall file - it inherits from other variants only.
 
 ### Finding Flatpak IDs
 
@@ -78,17 +78,17 @@ flatpak search app-name
 
 Or browse Flathub: https://flathub.org/
 
-## Adding New Flavors
+## Adding New Variants
 
-To add a new flavor:
+To add a new variant:
 
-1. Create a new preinstall file: `flatpaks/{flavor}.preinstall`
+1. Create a new preinstall file: `flatpaks/{variant}.preinstall`
 2. Add your Flatpak definitions using the INI format
-3. The build script will automatically detect and copy the file if the flavor is in `IMAGE_FLAVOR`
+3. The build script will automatically detect and copy the file if the variant is in `IMAGE_FLAVOR`
 
 ## Important Notes
 
-- Files must be named `{flavor}.preinstall` matching the flavor name
+- Files must be named `{variant}.preinstall` matching the variant name
 - Comments can be added with `#`
 - Empty lines are ignored
 - **Flatpaks are downloaded from Flathub on first boot** - not embedded in the image

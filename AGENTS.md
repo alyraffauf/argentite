@@ -25,18 +25,18 @@ Valid types: `feat`, `fix`, `docs`, `chore`, `build`, `ci`, `refactor`, `test`
 
 ## QUICK REFERENCE
 
-| Task                   | Location                       | Format                                     |
-| ---------------------- | ------------------------------ | ------------------------------------------ |
-| Add system package     | `packages.json`                | `"include"` array                          |
-| Add variant package    | `packages.json`                | `"variants.{name}.include"` array          |
-| Remove package         | `packages.json`                | `"exclude"` array                          |
-| Enable system service  | `services.json`                | `"system.enable"` array                    |
-| Enable variant service | `services.json`                | `"variants.{name}.system.enable"` array    |
-| Add 3rd-party RPM      | `build/25-third-party-*.sh`    | See examples                               |
-| Add COPR package       | `build/25-third-party-*.sh`    | `copr_install_isolated "owner/repo" "pkg"` |
-| Add Homebrew package   | `brew/*.Brewfile`              | `brew "package-name"`                      |
-| Add Flatpak            | `flatpaks/{flavor}.preinstall` | `[Flatpak Preinstall app.id]`              |
-| Add ujust command      | `ujust/{flavor}/*.just`        | Just recipe syntax                         |
+| Task                   | Location                        | Format                                     |
+| ---------------------- | ------------------------------- | ------------------------------------------ |
+| Add system package     | `packages.json`                 | `"include"` array                          |
+| Add variant package    | `packages.json`                 | `"variants.{name}.include"` array          |
+| Remove package         | `packages.json`                 | `"exclude"` array                          |
+| Enable system service  | `services.json`                 | `"system.enable"` array                    |
+| Enable variant service | `services.json`                 | `"variants.{name}.system.enable"` array    |
+| Add 3rd-party RPM      | `build/25-third-party-*.sh`     | See examples                               |
+| Add COPR package       | `build/25-third-party-*.sh`     | `copr_install_isolated "owner/repo" "pkg"` |
+| Add Homebrew package   | `brew/*.Brewfile`               | `brew "package-name"`                      |
+| Add Flatpak            | `flatpaks/{variant}.preinstall` | `[Flatpak Preinstall app.id]`              |
+| Add ujust command      | `ujust/{variant}/*.just`        | Just recipe syntax                         |
 
 ## VARIANTS
 
@@ -109,7 +109,7 @@ kyanite/
 ├── flatpaks/              # Flatpak preinstall files
 │   ├── main.preinstall
 │   └── gaming.preinstall
-├── ujust/                 # User commands by flavor
+├── ujust/                 # User commands by variant
 │   ├── main/             # Commands for all images
 │   ├── dx/               # Developer commands
 │   └── gaming/           # Gaming commands
