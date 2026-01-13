@@ -43,6 +43,25 @@ echo "application/vnd.flatpak.ref=io.github.kolunmi.Bazaar.desktop" >>/usr/share
 
 echo "::endgroup::"
 
+echo "::group:: Fix bootc lint issues"
+
+# Fix /var/run symlink if it was broken by package installation (e.g., Steam)
+if [[ -d /var/run ]] && [[ ! -L /var/run ]]; then
+    echo "Fixing /var/run symlink..."
+    rm -rf /var/run
+    ln -sf /run /var/run
+fi
+
+# Clean up /var and /run content created during build
+# These directories are declared in tmpfiles.d and will be recreated at boot
+echo "Cleaning up temporary build artifacts..."
+rm -rf /var/lib/dnf
+rm -rf /var/lib/freeipmi
+rm -rf /run/faillock
+rm -rf /run/sepermit
+
+echo "::endgroup::"
+
 echo "::group:: Commit OSTree"
 
 # Commit the ostree repository to finalize the image
