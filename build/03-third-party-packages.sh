@@ -77,7 +77,7 @@ if [[ ${IMAGE_FLAVOR} =~ gaming ]]; then
 fi
 
 if [[ ${IMAGE_FLAVOR} =~ dx ]]; then
-    echo "::group:: Add Developer Packages from COPR"
+    echo "::group:: Add Developer Packages"
 
     dnf5 config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
     sed -i "s/enabled=.*/enabled=0/g" /etc/yum.repos.d/docker-ce.repo
@@ -95,6 +95,11 @@ if [[ ${IMAGE_FLAVOR} =~ dx ]]; then
         echo "Creating docker group in /usr/lib/group"
         echo "docker:x:994:" >>/usr/lib/group
     fi
+
+    dnf5 config-manager addrepo --from-repofile=https://packages.microsoft.com/yumrepos/vscode/config.repo --save-filename=vscode
+    sed -i "s/enabled=.*/enabled=0/g" /etc/yum.repos.d/vscode.repo
+    dnf5 -y install --enablerepo=vscode-yum \
+        code
 
     echo "::endgroup::"
 fi
