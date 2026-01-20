@@ -2,6 +2,7 @@
     "variants": {
         "main": {
             "include": [
+                "cachefilesd",
                 "fish",
                 "git",
                 "ifuse",
