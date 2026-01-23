@@ -18,7 +18,8 @@
                 "podman-machine",
                 "podman-tui",
                 "ptyxis",
-                "syncthing"
+                "syncthing",
+                "uxplay"
             ],
             "exclude": [
                 "akonadi-server",
