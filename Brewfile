@@ -1,4 +1,4 @@
-# Brewfile for Kyanite Development
+# Brewfile for Argentite Development
 # Install with: brew bundle
 
 brew "act"

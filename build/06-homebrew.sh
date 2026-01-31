@@ -5,7 +5,7 @@ set -eoux pipefail
 ###############################################################################
 # Homebrew Setup
 ###############################################################################
-# This script configures Homebrew for the kyanite image.
+# This script configures Homebrew for the argentite image.
 ###############################################################################
 
 echo "::group:: Install Homebrew System Files"

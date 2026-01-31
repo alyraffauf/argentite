@@ -170,7 +170,7 @@ change-shell:
     echo "Shell changed successfully to $SHELL_PATH"
     echo "Please log out and log back in for changes to take effect."
 
-# Rebase to a different Kyanite variant
+# Rebase to a different Argentite variant
 [group('System')]
 rebase-helper:
     #!/usr/bin/env bash
@@ -178,14 +178,14 @@ rebase-helper:
 
     # Detect current variant
     CURRENT_VARIANT=$(grep '^IMAGE_ID=' /etc/os-release | cut -d'=' -f2 | tr -d '"')
-    echo "Current Kyanite variant: $CURRENT_VARIANT."
+    echo "Current Argentite variant: $CURRENT_VARIANT."
 
     # Define all variants and images
     declare -A IMAGES=(
-        ["kyanite"]="ghcr.io/alyraffauf/kyanite:stable"
-        ["kyanite-dx"]="ghcr.io/alyraffauf/kyanite-dx:stable"
-        ["kyanite-gaming"]="ghcr.io/alyraffauf/kyanite-gaming:stable"
-        ["kyanite-dx-gaming"]="ghcr.io/alyraffauf/kyanite-dx-gaming:stable"
+        ["argentite"]="ghcr.io/alyraffauf/argentite:stable"
+        ["argentite-dx"]="ghcr.io/alyraffauf/argentite-dx:stable"
+        ["argentite-gaming"]="ghcr.io/alyraffauf/argentite-gaming:stable"
+        ["argentite-dx-gaming"]="ghcr.io/alyraffauf/argentite-dx-gaming:stable"
     )
 
     # Build choices, excluding current variant

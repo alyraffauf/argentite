@@ -16,54 +16,54 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    build-kyanite:
-        name: Build kyanite
+    build-argentite:
+        name: Build argentite
         uses: ./.github/workflows/reusable_build.yml
         permissions:
             contents: read
             packages: write
             id-token: write
         with:
-            image_name: "kyanite"
+            image_name: "argentite"
             image_flavor: "main"
-            image_desc: "Kyanite - A clean KDE Plasma bootc image"
-            image_keywords: "bootc,ublue,universal-blue,kde"
+            image_desc: "Argentite - A clean GNOME bootc image"
+            image_keywords: "bootc,ublue,universal-blue,gnome"
 
-    build-kyanite-dx:
-        name: Build kyanite-dx
+    build-argentite-dx:
+        name: Build argentite-dx
         uses: ./.github/workflows/reusable_build.yml
         permissions:
             contents: read
             packages: write
             id-token: write
         with:
-            image_name: "kyanite-dx"
+            image_name: "argentite-dx"
             image_flavor: "dx"
-            image_desc: "Kyanite DX - Developer-focused variant with dev tools"
-            image_keywords: "bootc,ublue,universal-blue,kde,dx"
+            image_desc: "Argentite DX - Developer-focused variant with dev tools"
+            image_keywords: "bootc,ublue,universal-blue,gnome,dx"
 
-    build-kyanite-dx-gaming:
-        name: Build kyanite-dx-gaming
+    build-argentite-dx-gaming:
+        name: Build argentite-dx-gaming
         uses: ./.github/workflows/reusable_build.yml
         permissions:
             contents: read
             packages: write
             id-token: write
         with:
-            image_name: "kyanite-dx-gaming"
+            image_name: "argentite-dx-gaming"
             image_flavor: "dx-gaming"
-            image_desc: "Kyanite DX+GAMING - Developer and gaming focused variant with dev tools + Steam"
-            image_keywords: "bootc,ublue,universal-blue,kde,dx,steam"
+            image_desc: "Argentite DX+GAMING - Developer and gaming focused variant with dev tools + Steam"
+            image_keywords: "bootc,ublue,universal-blue,gnome,dx,steam"
 
-    build-kyanite-gaming:
-        name: Build kyanite-gaming
+    build-argentite-gaming:
+        name: Build argentite-gaming
         uses: ./.github/workflows/reusable_build.yml
         permissions:
             contents: read
             packages: write
             id-token: write
         with:
-            image_name: "kyanite-gaming"
+            image_name: "argentite-gaming"
             image_flavor: "gaming"
-            image_desc: "Kyanite GAMING - Gaming-focused variant with Steam"
-            image_keywords: "bootc,ublue,universal-blue,kde,gaming,steam"
+            image_desc: "Argentite GAMING - Gaming-focused variant with Steam"
+            image_keywords: "bootc,ublue,universal-blue,gnome,gaming,steam"

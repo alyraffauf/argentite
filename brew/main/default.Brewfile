@@ -1,4 +1,4 @@
-# Default Brewfile for kyanite
+# Default Brewfile for argentite
 # Add your favorite brew packages here
 #
 # Examples:

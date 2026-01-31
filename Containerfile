@@ -1,15 +1,15 @@
 ###############################################################################
 # BUILD ARGUMENTS
 ###############################################################################
-ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"
+ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-silverblue}"
 ARG SOURCE_IMAGE="${BASE_IMAGE_NAME}-main"
 # Static value enables Renovate to detect and update the base image
-ARG BASE_IMAGE="ghcr.io/ublue-os/kinoite-main:43"
+ARG BASE_IMAGE="ghcr.io/ublue-os/silverblue-main:43"
 ARG BREW_IMAGE="ghcr.io/ublue-os/brew:latest"
 # SHA pinning enables Renovate to automatically update dependencies
 # See: https://docs.renovatebot.com/docker/#digest-pinning
 
-ARG BASE_IMAGE_SHA="sha256:bf3e6f166b6ec51816f0ea8c5ccaebe6571ed8573a7913b1f8571c52c3513b05"
+ARG BASE_IMAGE_SHA="sha256:909405a58babf2b0a2ee69ef7f726e82155b8cc27eb19e3056260b761cbedf7b"
 ARG BREW_IMAGE_SHA="sha256:9021d14310509308f3cb8cc7cab98e5868212b2a744e044e998798d2eec26722"
 
 ###############################################################################
@@ -35,10 +35,10 @@ COPY --from=brew /system_files /oci/brew
 FROM ${BASE_IMAGE}@${BASE_IMAGE_SHA} AS base
 
 # Build arguments for image metadata and variant selection
-ARG IMAGE_NAME="${IMAGE_NAME:-kyanite}"
+ARG IMAGE_NAME="${IMAGE_NAME:-argentite}"
 ARG IMAGE_VENDOR="${IMAGE_VENDOR:-ublue-os}"
 ARG IMAGE_FLAVOR="${IMAGE_FLAVOR:-main}"
-ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"
+ARG BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-silverblue}"
 ARG SHA_HEAD_SHORT="${SHA_HEAD_SHORT:-}"
 ARG UBLUE_IMAGE_TAG="${UBLUE_IMAGE_TAG:-stable}"
 
@@ -52,8 +52,8 @@ LABEL org.opencontainers.image.flavor="${IMAGE_FLAVOR}"
 ###############################################################################
 # Execute build scripts with variant support
 # IMAGE_FLAVOR is available to all build scripts:
-#   - "main" (default): Base kyanite
-#   - "gaming": Kyanite with Steam and gaming tools
+#   - "main" (default): Base argentite
+#   - "gaming": Argentite with Steam and gaming tools
 
 # Step 1: Copy files and configure base system
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \

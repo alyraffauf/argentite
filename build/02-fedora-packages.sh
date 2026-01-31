@@ -9,15 +9,6 @@ set -eoux pipefail
 # Third-party repositories are handled in 25-third-party-packages.sh.
 ###############################################################################
 
-echo "::group:: Lock Plasma Desktop Version"
-
-dnf5 versionlock add plasma-desktop
-
-# Explicitly install KDE Plasma related packages with the same version as in base image
-dnf5 -y install "plasma-firewall-$(rpm -q --qf "%{VERSION}" plasma-desktop)"
-
-echo "::endgroup::"
-
 echo "::group:: Validate packages.json"
 
 # Validate packages.json before attempting to parse it

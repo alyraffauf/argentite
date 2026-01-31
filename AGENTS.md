@@ -1,6 +1,6 @@
-# Agent Instructions for Kyanite
+# Agent Instructions for Argentite
 
-Kyanite is a bootc OS based on Fedora Kinoite (KDE Plasma).
+Argentite is a bootc OS based on Fedora Silverblue (GNOME).
 
 ## PRE-COMMIT CHECKLIST
 
@@ -40,7 +40,7 @@ Valid types: `feat`, `fix`, `docs`, `chore`, `build`, `ci`, `refactor`, `test`
 
 ## VARIANTS
 
-Built images: `kyanite`, `kyanite-dx`, `kyanite-gaming`, `kyanite-dx-gaming`
+Built images: `argentite`, `argentite-dx`, `argentite-gaming`, `argentite-dx-gaming`
 
 Variants use **exact matching** by splitting `IMAGE_FLAVOR` on hyphens:
 
@@ -79,7 +79,7 @@ Variants use **exact matching** by splitting `IMAGE_FLAVOR` on hyphens:
 
 **4. Branding** (automatic):
 
-- `IMAGE_FLAVOR=dx-gaming` → KDE About shows "Variant=DX+GAMING"
+- `IMAGE_FLAVOR=dx-gaming` → GNOME About shows "Variant=DX+GAMING"
 
 ## BUILD SCRIPTS (Order)
 
@@ -88,7 +88,7 @@ Variants use **exact matching** by splitting `IMAGE_FLAVOR` on hyphens:
 3. `25-third-party-packages.sh` - Docker, Tailscale, COPR
 4. `30-workarounds.sh` - Compatibility fixes
 5. `40-systemd.sh` - Services from services.json
-6. `80-branding.sh` - OS release + KDE branding
+6. `80-branding.sh` - OS release + GNOME branding
 7. `90-cleanup.sh` - Cleanup
 
 See `build/README.md` for details.
@@ -96,7 +96,7 @@ See `build/README.md` for details.
 ## STRUCTURE
 
 ```
-kyanite/
+argentite/
 ├── Containerfile          # Build definition
 ├── packages.json          # Package lists
 ├── services.json          # Service configuration

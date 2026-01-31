@@ -1,16 +1,16 @@
-# Kyanite
+# Argentite
 
-Kyanite is a custom bootable container based on Fedora Kinoite focusing on minimal branding, sane defaults, and clean behavior. Built with [Universal Blue](https://universal-blue.org/).
+Argentite is a custom bootable container based on Fedora Silverblue focusing on minimal branding, sane defaults, and clean behavior. Built with [Universal Blue](https://universal-blue.org/).
 
 ![](./_img/screenshot.png)
 
 ## What Changed
 
-Kyanite is built on Universal Blue's [kinoite-main](https://github.com/ublue-os/main) image, which itself derives from Fedora Kinoite.
+Argentite is built on Universal Blue's [silverblue-main](https://github.com/ublue-os/main) image, which itself derives from Fedora Silverblue.
 
-Kyanite improves Fedora Kinoite with:
+Argentite improves Fedora Silverblue with:
 
-- **Saner defaults** - Mozilla's official Flatpak build of Firefox, Discover swapped for Bazaar, Flathub out of the box, and modernized KDE Plasma settings.
+- **Saner defaults** - Mozilla's official Flatpak build of Firefox, Flathub out of the box, and modernized GNOME settings.
 - **Full container workflows** - Docker CE with buildx/compose, enhanced Podman.
 - **Developer tools** - Fish shell, modern terminal, comprehensive tooling.
 - **Nice to haves** - Tailscale VPN, Syncthing, dynamic wallpapers.
@@ -22,34 +22,34 @@ Kyanite improves Fedora Kinoite with:
 
 All images are built and published automatically:
 
-- **kyanite** - Clean, modern, featureful KDE desktop for normal people.
-- **kyanite-dx** - Developer experience with Docker CE, QEMU/KVM, ROCm, Android tools, Flatpak builder, etc.
-- **kyanite-gaming** - Gaming experience with Steam, Gamescope, ProtonUp-Qt, Heroic Game Launcher, etc.
-- **kyanite-dx-gaming** - Everything combined.
+- **argentite** - Clean, modern, featureful GNOME desktop for normal people.
+- **argentite-dx** - Developer experience with Docker CE, QEMU/KVM, ROCm, Android tools, Flatpak builder, etc.
+- **argentite-gaming** - Gaming experience with Steam, Gamescope, ProtonUp-Qt, Heroic Game Launcher, etc.
+- **argentite-dx-gaming** - Everything combined.
 
 ## State of the Project
 
-Kyanite is quite usable as-is, and it's my daily driver. However, it's still under active development with frequent changes. Also, while the word-branding of the distribution has been changed, Fedora defaults persist in many places (Kickoff logo, `fastfetch`, wallpapers). I'm a photographer at best, not a graphics designer.
+Argentite is quite usable as-is, and it's my daily driver. However, it's still under active development with frequent changes. Also, while the word-branding of the distribution has been changed, Fedora defaults persist in many places (`fastfetch`, wallpapers). I'm a photographer at best, not a graphics designer.
 
 ## Quick Start
 
-If you're already on a bootc-based system (like Kinoite or Aurora), switching is easy:
+If you're already on a bootc-based system (like Silverblue or Aurora), switching is easy:
 
 ```bash
 # Standard variant
-sudo bootc switch ghcr.io/alyraffauf/kyanite:stable
+sudo bootc switch ghcr.io/alyraffauf/argentite:stable
 sudo systemctl reboot
 
 # Developer variant
-sudo bootc switch ghcr.io/alyraffauf/kyanite-dx:stable
+sudo bootc switch ghcr.io/alyraffauf/argentite-dx:stable
 sudo systemctl reboot
 
 # Gaming variant
-sudo bootc switch ghcr.io/alyraffauf/kyanite-gaming:stable
+sudo bootc switch ghcr.io/alyraffauf/argentite-gaming:stable
 sudo systemctl reboot
 
 # Combined DX + Gaming
-sudo bootc switch ghcr.io/alyraffauf/kyanite-dx-gaming:stable
+sudo bootc switch ghcr.io/alyraffauf/argentite-dx-gaming:stable
 sudo systemctl reboot
 ```
 
@@ -63,7 +63,7 @@ ujust --list
 
 ## Customization
 
-Kyanite uses a declarative configuration system:
+Argentite uses a declarative configuration system:
 
 - **[packages.json](packages.json)** - Define packages per variant.
 - **[services.json](services.json)** - Configure systemd units by variant.
@@ -72,7 +72,7 @@ Kyanite uses a declarative configuration system:
 - **[flatpaks/](flatpaks/)** - Flatpak preinstall files by variant.
 - **[ujust/](ujust/)** - Custom `ujust` commands by variant.
 
-Stacking variants are composed at build time. It is trivial to fork this repository and create your own Kyanite variants. See below for build options.
+Stacking variants are composed at build time. It is trivial to fork this repository and create your own Argentite variants. See below for build options.
 
 ## Building Locally
 
@@ -88,8 +88,8 @@ IMAGE_FLAVOR=gaming just build
 IMAGE_FLAVOR=dx-gaming just build
 
 # Build with NVIDIA base image
-BASE_IMAGE_SHA=$(skopeo inspect docker://ghcr.io/ublue-os/kinoite-nvidia:latest --format '{{.Digest}}')
-BASE_IMAGE=ghcr.io/ublue-os/kinoite-nvidia:latest \
+BASE_IMAGE_SHA=$(skopeo inspect docker://ghcr.io/ublue-os/silverblue-nvidia:latest --format '{{.Digest}}')
+BASE_IMAGE=ghcr.io/ublue-os/silverblue-nvidia:latest \
 BASE_IMAGE_SHA=$BASE_IMAGE_SHA \
 IMAGE_FLAVOR=dx-gaming \
 just build
@@ -104,7 +104,7 @@ Output appears in `output/` directory.
 
 ## Building Your Own ISO
 
-While the build system supports ISO generation (`just build-iso`), I don't yet provide pre-built ISOs for download. Your best bet is to install Fedora Kinoite and rebase from there. However, if you'd like to skip the middleman, you may buid an install ISO locally:
+While the build system supports ISO generation (`just build-iso`), I don't yet provide pre-built ISOs for download. Your best bet is to install Fedora Silverblue and rebase from there. However, if you'd like to skip the middleman, you may buid an install ISO locally:
 
 ```bash
 just build-iso  # Requires ~10GB disk space and 30+ minutes
@@ -118,16 +118,16 @@ Images are signed with [Sigstore Cosign](https://github.com/sigstore/cosign) usi
 
 ```bash
 cosign verify \
-  --certificate-identity-regexp="https://github.com/alyraffauf/kyanite/.*" \
+  --certificate-identity-regexp="https://github.com/alyraffauf/argentite/.*" \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
-  ghcr.io/alyraffauf/kyanite:stable
+  ghcr.io/alyraffauf/argentite:stable
 ```
 
 ### Use Signed Transport
 
 ```bash
 # Switch to signed registry
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/alyraffauf/kyanite:stable
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/alyraffauf/argentite:stable
 sudo systemctl reboot
 
 # Verify
@@ -144,4 +144,4 @@ rpm-ostree status  # Should show "ostree-image-signed:" prefix
 
 Apache License 2.0 - See [LICENSE.md](LICENSE.md) for details.
 
-Built with [Universal Blue](https://universal-blue.org/) tooling. Based on [Fedora Kinoite](https://fedoraproject.org/kinoite/) with [KDE Plasma](https://kde.org/).
+Built with [Universal Blue](https://universal-blue.org/) tooling. Based on [Fedora Silverblue](https://fedoraproject.org/silverblue/) with [GNOME](https://gnome.org/).

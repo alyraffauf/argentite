@@ -8,22 +8,22 @@ echo "::group:: Applying OS Release Branding"
 ###############################################################################
 # OS Release Branding
 ###############################################################################
-# Complete branding changes to make system identify as "Kyanite"
+# Complete branding changes to make system identify as "Argentite"
 # Following Aurora/Bluefin pattern - maintains full Fedora compatibility
 
-IMAGE_PRETTY_NAME="Kyanite"
+IMAGE_PRETTY_NAME="Argentite"
 IMAGE_LIKE="fedora"
 IMAGE_VENDOR="alyraffauf"
-IMAGE_NAME="${IMAGE_NAME:-kyanite}"
+IMAGE_NAME="${IMAGE_NAME:-argentite}"
 IMAGE_FLAVOR="${IMAGE_FLAVOR:-main}"
 IMAGE_TAG="${UBLUE_IMAGE_TAG:-stable}"
-BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-kinoite}"
+BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-silverblue}"
 FEDORA_VERSION="43"
 VERSION="${VERSION:-43}"
-HOME_URL="https://github.com/${IMAGE_VENDOR}/kyanite"
-DOCUMENTATION_URL="https://github.com/${IMAGE_VENDOR}/kyanite/blob/main/README.md"
-SUPPORT_URL="https://github.com/${IMAGE_VENDOR}/kyanite/issues/"
-BUG_SUPPORT_URL="https://github.com/${IMAGE_VENDOR}/kyanite/issues/"
+HOME_URL="https://github.com/${IMAGE_VENDOR}/argentite"
+DOCUMENTATION_URL="https://github.com/${IMAGE_VENDOR}/argentite/blob/main/README.md"
+SUPPORT_URL="https://github.com/${IMAGE_VENDOR}/argentite/issues/"
+BUG_SUPPORT_URL="https://github.com/${IMAGE_VENDOR}/argentite/issues/"
 CODE_NAME="Silicate"
 
 # Create image-info.json
@@ -71,27 +71,6 @@ echo "IMAGE_VERSION=\"$VERSION\"" >>/usr/lib/os-release
 
 # Fix issues caused by ID no longer being fedora
 sed -i 's|^EFIDIR=.*|EFIDIR="fedora"|' /usr/sbin/grub2-switch-to-blscfg
-
-# Update KDE About dialog variant string based on IMAGE_FLAVOR
-KDE_ABOUT_RC="/usr/share/kde-settings/kde-profile/default/xdg/kcm-about-distrorc"
-if [[ -f $KDE_ABOUT_RC ]]; then
-    if [[ ${IMAGE_FLAVOR} != "main" ]]; then
-        # Split IMAGE_FLAVOR by hyphen, sort, uppercase, and join with +
-        IFS='-' read -ra FLAVOR_PARTS <<<"${IMAGE_FLAVOR}"
-        # Sort the array
-        mapfile -t SORTED_FLAVORS < <(printf '%s\n' "${FLAVOR_PARTS[@]}" | sort)
-        # Convert to uppercase and join with +
-        VARIANT_STRING=$(printf '%s\n' "${SORTED_FLAVORS[@]}" | tr '[:lower:]' '[:upper:]' | paste -sd '+')
-
-        # Append Variant= line to KDE About dialog
-        echo "Variant=${VARIANT_STRING}" >>"$KDE_ABOUT_RC"
-        echo "Set KDE Variant to: ${VARIANT_STRING}"
-    else
-        # For main variant, set to "DESKTOP"
-        echo "Variant=DESKTOP" >>"$KDE_ABOUT_RC"
-        echo "Set KDE Variant to: DESKTOP"
-    fi
-fi
 
 ###############################################################################
 

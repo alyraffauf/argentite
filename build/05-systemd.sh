@@ -5,7 +5,7 @@ set -eoux pipefail
 ###############################################################################
 # Systemd Service Configuration
 ###############################################################################
-# This script enables and disables systemd services for the kyanite image.
+# This script enables and disables systemd services for the argentite image.
 # Service configuration is read from services.json.
 ###############################################################################
 

@@ -6,10 +6,10 @@ This directory contains Flatpak preinstall configuration files for each image va
 
 Each `.preinstall` file corresponds to an image variant:
 
-- `main.preinstall` - Base variant flatpaks (applies to all kyanite images)
-- `gaming.preinstall` - Gaming variant flatpaks (applies to kyanite-gaming and kyanite-dx-gaming)
+- `main.preinstall` - Base variant flatpaks (applies to all argentite images)
+- `gaming.preinstall` - Gaming variant flatpaks (applies to argentite-gaming and argentite-dx-gaming)
 
-Files are copied to `/usr/share/flatpak/preinstall.d/kyanite-{variant}.preinstall` in the built image based on the `IMAGE_FLAVOR` variable during the build.
+Files are copied to `/usr/share/flatpak/preinstall.d/argentite-{variant}.preinstall` in the built image based on the `IMAGE_FLAVOR` variable during the build.
 
 ## What is Flatpak Preinstall?
 

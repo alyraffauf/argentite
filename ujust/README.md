@@ -30,8 +30,8 @@ ujust/
 **Files are included based on IMAGE_FLAVOR:**
 
 - `main/` - Always included
-- `dx/` - Included for kyanite-dx and kyanite-dx-gaming
-- `gaming/` - Included for kyanite-gaming and kyanite-dx-gaming
+- `dx/` - Included for argentite-dx and argentite-dx-gaming
+- `gaming/` - Included for argentite-gaming and argentite-dx-gaming
 
 ## Example Commands
 
@@ -192,7 +192,7 @@ Universal Blue images include helpers in `/usr/lib/ujust/ujust.sh`:
 Test locally before committing:
 
 1. Build your image: `just build` (see [`Justfile`](../../Justfile))
-2. If on a bootc system: `sudo bootc switch --target localhost/kyanite:stable`
+2. If on a bootc system: `sudo bootc switch --target localhost/argentite:stable`
 3. Reboot and test: `ujust your-command`
 
 Or test the just files directly:

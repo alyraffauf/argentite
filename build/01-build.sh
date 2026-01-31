@@ -46,7 +46,7 @@ mkdir -p /usr/share/flatpak/preinstall.d/
 for variant in main "${FLAVOR_PARTS[@]}"; do
     if [[ -f "/ctx/flatpaks/${variant}.preinstall" ]]; then
         echo "Installing Flatpak preinstall for: ${variant}"
-        cp "/ctx/flatpaks/${variant}.preinstall" "/usr/share/flatpak/preinstall.d/kyanite-${variant}.preinstall"
+        cp "/ctx/flatpaks/${variant}.preinstall" "/usr/share/flatpak/preinstall.d/argentite-${variant}.preinstall"
     fi
 done
 
