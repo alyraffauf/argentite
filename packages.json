@@ -23,7 +23,8 @@
                 "fedora-bookmarks",
                 "fedora-chromium-config",
                 "firefox",
-                "firefox-langpacks"
+                "firefox-langpacks",
+                "ptyxis"
             ]
         },
         "dx": {
