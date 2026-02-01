@@ -15,6 +15,8 @@ mkdir -p /nix
 chown root:root /nix
 chmod 755 /nix
 
+glib-compile-schemas /usr/share/glib-2.0/schemas
+
 echo "::endgroup::"
 
 echo "System workarounds applied successfully!"
