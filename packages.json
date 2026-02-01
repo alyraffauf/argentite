@@ -6,6 +6,8 @@
                 "fish",
                 "git",
                 "gnome-shell-extension-appindicator",
+                "gnome-shell-extension-caffeine",
+                "gnome-shell-extension-just-perfection",
                 "gnome-tweaks",
                 "ifuse",
                 "inxi",
@@ -24,6 +26,7 @@
                 "fedora-chromium-config",
                 "firefox",
                 "firefox-langpacks",
+                "gnome-software",
                 "ptyxis"
             ]
         },
